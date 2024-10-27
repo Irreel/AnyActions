@@ -28,7 +28,6 @@ class Hub:
         self.definition_list = definition(tool_list)
         return self.definition_list
         
-    
     def verification(self, api_name):
         """_summary_
         TODO: Currently it keeps 3rd party API keys locally
@@ -75,6 +74,14 @@ class Hub:
                         inter_api_key = line.strip().split('=')[1].strip().strip("'")
                         break
                     
+        # Check if the domain url is customized
+        endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
+        if len(endpoint_params) > 0:
+            endpoint_params = db[provider_name][action_name]['endpoint_params']
+            endpoint_params_dict = {}
+            for param in endpoint_params:
+                endpoint_params_dict[param] = input(f"Please enter {param} to set up {api_name} API")
+                    
         ###### If api key is not found
         if not api_key_found:
             with open(self.api_file_path, 'w') as f:
@@ -87,7 +94,7 @@ class Hub:
         return True, provider_name, action_name, inter_api_key
         
           
-    def _act(self, api_name, input_params, entrypoint_cache=True):
+    def _act(self, api_name, input_params, endpoint_cache=True):
         
         assert isinstance(api_name, str)
         
@@ -110,7 +117,7 @@ class Hub:
         
         # TODO: Search target API if api_name is not specified
         if api_name not in db_index:
-            # TODO: Search a relevant entrypoint in the database
+            # TODO: Search a relevant endpoint in the database
             search_result = ''
             
             # TODO: Not sure about this feature: save/append the called function into local file??
@@ -123,7 +130,8 @@ class Hub:
             
             # Get the calling specification
             request_type = db[provider_name][action_name]["request"]
-            entrypoint = db[provider_name][action_name]["entrypoint"]
+            endpoint = db[provider_name][action_name]["endpoint"]
+            endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
             input_schema = db[provider_name][action_name]["input_schema"]
             config_params = db[provider_name][action_name].get('config_params', None)
             output_schema = db[provider_name][action_name]["output_schema"]
@@ -145,7 +153,7 @@ class Hub:
         
         if request_type == "GET":
             try:
-                response = requests.get(entrypoint, params=pass_params)
+                response = requests.get(endpoint, params=pass_params)
             except Exception as e:
                 raise Exception(f"{api_name} {request_type} request error")
                 # return ?

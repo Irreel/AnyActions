@@ -77,7 +77,8 @@ def definition(tool_list: List) -> List[dict]:
                     legal_api_name = tool_name_to_index.get(entry, None) # tool_name_to_index is a stub code to stimulate the real database
                     if legal_api_name:
                         # RANDOM IDEA: Add a local mapping between tool name and legal api name?
-                        provider_name, action_name = legal_api_name.split("_")
+                        provider_name = legal_api_name.split("_")[0]
+                        action_name = legal_api_name.split("_", 1)[1]
                         tool_definition_list.append(db[provider_name][action_name]['ai_tool_desc'])
                     else:
                         print(f"{entry} is not found in actions library")
