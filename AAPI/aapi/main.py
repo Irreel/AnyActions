@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from typing import List
+from typing import List, Dict
 
 
 from .utils import create_inter_api_key, definition
@@ -15,6 +15,7 @@ class Hub:
         self.user = {
             "hub_api_key": api_key,
         }
+        self.resolved_endpoint = {}
         
         # Debug print statements
         print(f"Initializing aapi with environment_context: {environment_context}")
@@ -25,6 +26,11 @@ class Hub:
         self.api_file_path = os.path.join(api_file_path, '.env_api_key')
                     
     def tools(self, tool_list: List) -> List[dict]:
+        
+        # TODO: Validate if 
+        # 1. entry in tool_list is valid in our db 
+        # 2. check dependencies - warning before the execution stage?
+        
         self.definition_list = definition(tool_list)
         return self.definition_list
         
@@ -50,15 +56,37 @@ class Hub:
             ValueError: If creation of a required API key fails.
         """
         
-        # Assume all the api name is formatted in upperletters
-        legal_api_name = api_name.upper() 
+        # TODO: legal format of api name is just tentative. Assume all the api name is formatted in upperletters
+        legal_api_name = api_name.upper()   
+        provider_name, action_name = legal_api_name.split("_", maxsplit=1)
         
-        # Check if it needs api key verification
-        provider_name, action_name = legal_api_name.split("_")[:2]
-        if db[provider_name][action_name]["api_key_flg"] == 0:
+        # Check if endpoint url is customized
+        endpoint = db[provider_name][action_name]["endpoint"]
+        endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
+        if len(endpoint_params) > 0:
+            endpoint_params = db[provider_name][action_name]['endpoint_params']
+            endpoint_params_dict = {}
+            for param in endpoint_params:
+                x = input(f"Please enter {param} to set up {api_name} API: ")
+                if x:
+                    endpoint_params_dict[param] = x
+                else:
+                    raise ValueError(f"\nPlease enter {param} to set up {api_name} API. Read {provider_name} documentation for parameter details: {db[provider_name][action_name]['documentation']}")
+            try:
+                self.resolved_endpoint[legal_api_name] = endpoint.format(**endpoint_params_dict)
+            except:
+                raise ValueError(f"Failed to resolve endpoint params for {api_name}")
+                return False, provider_name, action_name, None
+        
+        # Check if it needs api key verification  
+        api_key_flg = int(db[provider_name][action_name]["api_key_flg"])
+        if api_key_flg == 0:
+            # No api key required
             return True, provider_name, action_name, None
         
-        ###### If it needs api key verification
+        # If api key verification is required or optional
+        # Try to access local API key, if not found, create one; if key is optional, still create a null string
+        
         # Access local API key
         if not os.path.exists(self.api_file_path):
             api_key_found = False
@@ -73,29 +101,27 @@ class Hub:
                         # Extract the inter_api_key from the line
                         inter_api_key = line.strip().split('=')[1].strip().strip("'")
                         break
-                    
-        # Check if the domain url is customized
-        endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
-        if len(endpoint_params) > 0:
-            endpoint_params = db[provider_name][action_name]['endpoint_params']
-            endpoint_params_dict = {}
-            for param in endpoint_params:
-                endpoint_params_dict[param] = input(f"Please enter {param} to set up {api_name} API")
-                    
-        ###### If api key is not found
-        if not api_key_found:
+                
+        if not api_key_found and api_key_flg == 1:
+            # If local API key is not found
+            status, inter_api_key = create_inter_api_key(legal_api_name, self.api_file_path, self.user, api_key_flg=api_key_flg)  
+        elif api_key_flg == 2:
+            # If api key is optional, still create a null string
+            print(f"API key is optional for {legal_api_name}. Do not use key temporarily.")
+            inter_api_key = None
+            status = True
+            
+        if status:
             with open(self.api_file_path, 'w') as f:
-                status, inter_api_key = create_inter_api_key(legal_api_name, self.api_file_path, self.user)
-                if status:
-                    f.write(f"ACTION_{legal_api_name}_KEY = '{inter_api_key}'\n")
-                else:
-                    raise ValueError(f"Failed to create {legal_api_name} key")          
+                f.write(f"ACTION_{legal_api_name}_KEY = '{inter_api_key}'\n")
+        else:
+            raise ValueError(f"Failed to create {legal_api_name} key")  
         
         return True, provider_name, action_name, inter_api_key
         
           
     def _act(self, api_name, input_params, endpoint_cache=True):
-        
+
         assert isinstance(api_name, str)
         
         # Format input params
@@ -130,8 +156,10 @@ class Hub:
             
             # Get the calling specification
             request_type = db[provider_name][action_name]["request"]
-            endpoint = db[provider_name][action_name]["endpoint"]
+            endpoint = db[provider_name][action_name]["endpoint"] 
             endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
+            if endpoint_params:
+                endpoint = self.resolved_endpoint[api_name]
             input_schema = db[provider_name][action_name]["input_schema"]
             config_params = db[provider_name][action_name].get('config_params', None)
             output_schema = db[provider_name][action_name]["output_schema"]
@@ -141,6 +169,7 @@ class Hub:
             # This is the params passing to the request, which can be different than user input params
             pass_params = {**input_params, **config_params} if config_params else input_params
             
+            # TODO: Add more calling authentication methods
             if inter_api_key:
                 pass_params["api_key"] = inter_api_key
             
@@ -155,17 +184,21 @@ class Hub:
             try:
                 response = requests.get(endpoint, params=pass_params)
             except Exception as e:
-                raise Exception(f"{api_name} {request_type} request error")
-                # return ?
+                # print(f"{api_name} {request_type} request error: {e}")
+                raise Exception(e)
                 
             data = response.json()
         
         return data, output_schema
     
 
-    def act(self, response_object):
+    def act(self, response_object, observer=False):
         # TODO: rename to response_act ?
         """_summary_
+        
+        Args:
+            observer (bool): If True, return the tool being called and its arguments
+            
         Support object type: 
             - openai.types.chat.chat_completion.ChatCompletion
             - anthropic.types.message.Message
@@ -173,11 +206,8 @@ class Hub:
         
         #######
         # Parse the response object
+        # TODO: Just a very naive and temporary solution for parsing different response objects. Gonna replace it with a more robust one.
         #######
-        
-        # print(type(response_object)) # <class 'anthropic.types.message.Message'>
-        # print(isinstance(response_object, dict)) # False 
-        
         if isinstance(response_object, list):
             if len(response_object) == 1:
                 response_object = response_object[0]
@@ -219,7 +249,7 @@ class Hub:
                         print(f"Arguments: {function_args}")
             else:
                 # If there are no tool calls, just print the content
-                print(f"No tool calls. Model response: {message.get('content')}")
+                print(f"\n[No tool calling] Model response: {message.get('content')}\n")
         
         # if it is ChatCompletionMessage object from OpenAI
         # ...
@@ -255,7 +285,10 @@ class Hub:
                         print(f"  Tool name: {item['name']}")
                         print(f"  Tool input: {json.dumps(item['input'], indent=2)}")
             else:
-                print(f"No tool calls. Model response: {content[0].get('text')}")
+                # TODO: testing
+                print(f"\n[No tool calling] Model response: {content}\n")
+                
+                return content, None
             
         else:
             raise Exception("Unsupported response object type")
@@ -281,6 +314,13 @@ class Hub:
         
         return response, output_schema
         
+    
+    def call(self, api_name, input_params):
+        """This is for calling 3rd party api directly without model"""
+        
+        # TODO
+        
+        raise NotImplementedError
         
 # class Actions:
     

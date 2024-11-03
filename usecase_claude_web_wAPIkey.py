@@ -22,7 +22,7 @@ llm_response = client.messages.create(
 # Print the console response
 print(llm_response.content)
 
-response, output_schema = actionsHub.act(llm_response) # A more intuitive way to coding here is to pass tools definition in
+response, output_schema = actionsHub.act(llm_response)
 
 print(response)
 
