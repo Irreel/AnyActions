@@ -6,6 +6,7 @@
                 "author": "AnyActions",
                 "provider": "serpapi",
                 "description": "Performs a Google search for the given query",
+                "documentation": "https://serpapi.com/search-api",
                 "request": "GET",
                 "endpoint": "https://serpapi.com/search",
                 "endpoint_params": [],
@@ -138,6 +139,7 @@
                 "author": "AnyActions",
                 "provider": "wikipedia",
                 "description": "Searches Wikipedia for the given query and returns a list of relevant articles",
+                "documentation": "https://en.wikipedia.org/api/rest_v1/#/",
                 "request": "GET",
                 "endpoint": "https://en.wikipedia.org/w/api.php",
                 "endpoint_params": [],
@@ -216,7 +218,8 @@
             {
                 "author": "AnyActions",
                 "provider": "atlassian",
-                "description": "Searches for Jira dashboards based on various criteria",
+                "description": "Search for Jira dashboards. Anonymous users can view public dashboards; logged-in users see more, based on ownership, group, and project access.",
+                "documentation": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-dashboards/#api-rest-api-3-dashboard-search-get",
                 "request": "GET",
                 "endpoint": "https://{user_domain}.atlassian.net/rest/api/3/dashboard/search",
                 "endpoint_params": ["user_domain"],
@@ -267,10 +270,10 @@
                         "total": {"type": "integer"}
                     }
                 },
-                "api_key_flg": 1,
+                "api_key_flg": 2,
                 "ai_tool_desc": {
                     "name": "jira_search_dashboard",
-                    "description": "Searches for Jira dashboards based on various criteria",
+                    "description": "Search for Jira dashboards. Anonymous users can view public dashboards; logged-in users see more, based on ownership, group, and project access.",
                     "input_schema": {
                         "type": "object",
                         "properties": {
@@ -302,9 +305,16 @@
                                 "type": "string",
                                 "description": "Filter by dashboard status (active or archived)"
                             }
-                        }
+                        },
+                        "required": []
                     }
                 }
             }
+        },
+    "FATSECRET":
+        {
+            "endpoint": "https://api.fatsecret.com/rest/server.api",
+            "notes": "Tentative new schema, when provider has a unified base url"
+
         }
 }
