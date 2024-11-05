@@ -32,8 +32,6 @@ print(output_schema)
 
 
 
-
-
 # import requests
 # from requests.auth import HTTPBasicAuth
 # import json

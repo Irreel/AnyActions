@@ -108,7 +108,7 @@ class Hub:
         elif api_key_flg == 2:
             # If api key is optional, still create a null string
             print(f"API key is optional for {legal_api_name}. Do not use key temporarily.")
-            inter_api_key = None
+            inter_api_key = ''
             status = True
             
         if status:
