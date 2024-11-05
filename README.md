@@ -1,4 +1,4 @@
-# AAPI
+# AnyActions
 （Just a random name for now）
 
 ## Setup
@@ -19,8 +19,13 @@ Enable `git lfs` to download the large files in `APIdb`. (Something wrong with c
 - need API key: Google search
 `usecase_claude_web_wAPIkey.py`: a use case to demo when 3rd party API calling needs API key
   
-### Use case 3 [TODO]
+### Use case 3 
 - need API key and some other Auth: JIRA, Slack
+- `usecase_claude_web_JIRA.py`
+
+### Use case 4 [Pending]
+- need tool usage in local/runtime environemnt, like screenshot, Apple Calendar
+- `usecase_claude_os_screenshot.py`
 
 
 ## API Database
@@ -56,3 +61,18 @@ Hub class()
 - Providing tool description for LLM interactions: `tools()`
 - Executing API calls: `act()`
 
+
+
+## Unit Test
+
+### Running the Tests
+To run the tests, navigate to the `AnyActions/AAPI/tests` directory in your terminal and execute:
+```bash
+python -m unittest discover
+```
+
+This command will discover and run all the test files in the directory that match the pattern `test*.py`.
+
+### Notes
+- The tests use mocking to simulate file operations and environment checks, which allows for isolated testing without needing actual files or environment states.
+- You can expand the tests further based on additional methods and functionalities in library.

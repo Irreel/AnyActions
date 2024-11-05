@@ -218,7 +218,7 @@
             {
                 "author": "AnyActions",
                 "provider": "atlassian",
-                "description": "Search for Jira dashboards. Anonymous users can view public dashboards; logged-in users see more, based on ownership, group, and project access.",
+                "description": "Search for Jira dashboards. Returns a paginated list of dashboards. This operation can be accessed anonymously.",
                 "documentation": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-dashboards/#api-rest-api-3-dashboard-search-get",
                 "request": "GET",
                 "endpoint": "https://{user_domain}.atlassian.net/rest/api/3/dashboard/search",
@@ -273,7 +273,7 @@
                 "api_key_flg": 2,
                 "ai_tool_desc": {
                     "name": "jira_search_dashboard",
-                    "description": "Search for Jira dashboards. Anonymous users can view public dashboards; logged-in users see more, based on ownership, group, and project access.",
+                    "description": "Returns a paginated list of dashboards. This operation can be accessed anonymously. No parameters are required.",
                     "input_schema": {
                         "type": "object",
                         "properties": {
