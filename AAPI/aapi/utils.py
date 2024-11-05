@@ -53,8 +53,19 @@ def create_inter_api_key(legal_api_name, api_file_path, user, api_key_flg=1):
             
             
             # TODO: Register a API key for developers? [HasBeenDiscussed]
-            # TODO: There might be some APIs need to install their own libary mandatory? 
-            # TODO: Maybe we can download those library in user local folder?? Just likw how huggingface save checkpoints in user local folders? Or prompt users to install it
+            
+            # TODO: There might be some APIs need to install their own libary mandatory. Maybe we can download those library in user local folder automatically?
+                # Run terminal command to install their library
+                # try:
+                #     import subprocess
+                #     subprocess.check_call(["pip", "install", "atlassian-python-api"])
+                #     print("Successfully installed JIRA library")
+                #     inter_api_key = input("Please enter your JIRA API token: ")
+                #     return True, inter_api_key
+                # except subprocess.CalledProcessError as e:
+                #     print(f"Failed to install JIRA library: {e}")
+                #     return False, None
+                
             
         
     except Exception as e:

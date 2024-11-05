@@ -138,7 +138,7 @@
             {
                 "author": "AnyActions",
                 "provider": "wikipedia",
-                "description": "Searches Wikipedia for the given query and returns a list of relevant articles",
+                "description": "Searches Wikipedia (English) for the given query and returns a list of relevant articles",
                 "documentation": "https://en.wikipedia.org/api/rest_v1/#/",
                 "request": "GET",
                 "endpoint": "https://en.wikipedia.org/w/api.php",
@@ -222,7 +222,7 @@
                 "documentation": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-dashboards/#api-rest-api-3-dashboard-search-get",
                 "request": "GET",
                 "endpoint": "https://{user_domain}.atlassian.net/rest/api/3/dashboard/search",
-                "endpoint_params": ["user_domain"],
+                "endpoint_params": {"user_domain": "Check it by logging into your Jira instance through a web browser. The URL in the address bar will show your domain: https://id.atlassian.com/login"},
                 "input_schema": {
                     "dashboardName": "String to filter dashboards by their name.",
                     "accountId": "User account ID to filter dashboards created by the user.",
