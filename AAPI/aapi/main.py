@@ -7,9 +7,11 @@ from typing import List, Dict
 from .utils import create_inter_api_key, definition
 from .db_tmp import db_index, db, tool_name_to_index
 
+from .constants import LOCAL_ENV_PATH
+
 class Hub:
     
-    def __init__(self, api_key, environment_context={}, api_file_path='./'):
+    def __init__(self, api_key, environment_context={}, api_file_path=LOCAL_ENV_PATH):
                 
         self.environment_context = environment_context
         self.user = {
@@ -21,9 +23,12 @@ class Hub:
         print(f"Initializing aapi with environment_context: {environment_context}")
         # print(f"API key set: {'Yes' if api_key else 'No'}")
         
+        os.makedirs(api_file_path, exist_ok=True)
+        
         # Maintain 3rd party API Keys 
         # ##TODO: save the API at serverside
-        self.api_file_path = os.path.join(api_file_path, '.env_api_key')
+        self.api_file_path = os.path.join(api_file_path, '.api_key')
+        self.api_config_path = os.path.join(api_file_path, '.config')
                     
     def tools(self, tool_list: List) -> List[dict]:
         
@@ -63,15 +68,18 @@ class Hub:
         # Check if endpoint url is customized
         endpoint = db[provider_name][action_name]["endpoint"]
         endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
+        
+        # TODO: if we should stored all the endpoint params in a local file?
+        
         if len(endpoint_params) > 0:
-            endpoint_params = db[provider_name][action_name]['endpoint_params']
+            endpoint_params = dict(db[provider_name][action_name]['endpoint_params'])
             endpoint_params_dict = {}
-            for param in endpoint_params:
-                x = input(f"Please enter {param} to set up {api_name} API: ")
+            for param in endpoint_params.items():
+                x = input(f"\nPlease enter {param[0]} to set up {api_name} API ({param[1]}):")
                 if x:
-                    endpoint_params_dict[param] = x
+                    endpoint_params_dict[param[0]] = x
                 else:
-                    raise ValueError(f"\nPlease enter {param} to set up {api_name} API. Read {provider_name} documentation for parameter details: {db[provider_name][action_name]['documentation']}")
+                    raise ValueError(f"\nPlease enter {param[0]} to set up {api_name} API. Read {provider_name} documentation for parameter details: {db[provider_name][action_name]['documentation']}")
             try:
                 self.resolved_endpoint[legal_api_name] = endpoint.format(**endpoint_params_dict)
             except:
@@ -321,11 +329,6 @@ class Hub:
         # TODO
         
         raise NotImplementedError
-        
-# class Actions:
     
-#     def __init__(self, name_list):
-#         raise NotImplementedError
-
     
 

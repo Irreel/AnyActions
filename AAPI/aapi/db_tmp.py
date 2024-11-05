@@ -5,7 +5,15 @@ db is formatted as
 db = {
     "PROVIDER_NAME":
     {
-        "ACTION_NAME"
+        "ACTION_NAME":{
+            "author": "AnyActions",
+            "provider": "atlassian",
+            "description": "Search for Jira dashboards. Returns a paginated list of dashboards. This operation can be accessed anonymously.",
+            "documentation": "https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-dashboards/#api-rest-api-3-dashboard-search-get",
+            "request": "GET",
+            "endpoint": "https://{user_domain}.atlassian.net/rest/api/3/dashboard/search",
+            "endpoint_params": {"param_name": "link / instruction to set up this param"},
+        }
     }
 }
 
