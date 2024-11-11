@@ -26,6 +26,7 @@ db_index = ["GOOGLE_SEARCH", "WIKIPEDIA_SEARCH", "JIRA_SEARCH_DASHBOARD"]
 
 tool_name_to_index = {
     # tool_name is how LLM called these tools in their response
+    # index helps us to find the tool in the db. Can be updated if data schema changes
     "google_search": "GOOGLE_SEARCH",
     "wikipedia_search": "WIKIPEDIA_SEARCH",
     "jira_search_dashboard": "JIRA_SEARCH_DASHBOARD"
