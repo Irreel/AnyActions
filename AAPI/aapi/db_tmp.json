@@ -313,8 +313,10 @@
         },
     "FATSECRET":
         {
-            "endpoint": "https://api.fatsecret.com/rest/server.api",
-            "notes": "Tentative new schema, when provider has a unified base url"
-
+            "baseURL": "...",
+            "paths": {  
+                "endpoint": "https://api.fatsecret.com/rest/server.api",
+                "notes": "This is a tentative new schema, when provider has a unified base url. We are not using it for now"
+            }
         }
 }
