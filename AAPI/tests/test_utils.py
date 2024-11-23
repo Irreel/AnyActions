@@ -17,5 +17,6 @@ class TestUtils(unittest.TestCase):
         status, inter_api_key = create_inter_api_key(legal_api_name, api_file_path, user)
         self.assertFalse(status)
         self.assertIsNone(inter_api_key)
+    
 if __name__ == '__main__':
     unittest.main()

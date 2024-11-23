@@ -1,6 +1,7 @@
 .env
 .env_api_key
-/AAPI/aapi/register_api_tmp.py
+./AAPI/aapi/register_api_tmp.py
+tmp.*
 
 
 # Byte-compiled / optimized / DLL files
