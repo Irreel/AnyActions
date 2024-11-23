@@ -1,3 +1,4 @@
 register_api_tmp = {
-    "GOOGLE_SEARCH": "c000000" #
+    "GOOGLE_SEARCH": "c000000", #
+    "JIRA": "ATATT3xFfGF0wY5jqil4qSNA1IaiIx_lUpR8is0e9qLrq0F9gBX19G-_d01Omcnte6YA4wn_21Plv9v3z9KMF15tL-lSC0julyR3W_d_7-8a5_XrqQNLmo8eT2BqV2YpagDZ6_gNmnXgSLm4R5Q5tzgBYpmT9hEYmYAlePuMCrW-6gMwNqQJW_Y=281C3BDE"
 }

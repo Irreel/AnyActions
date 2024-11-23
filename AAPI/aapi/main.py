@@ -3,15 +3,18 @@ import json
 import requests
 from typing import List, Dict
 
+from .base.decorators import *
+from .utils import create_inter_api_key, definition, parse_tool_definition
 
-from .utils import create_inter_api_key, definition
+# TODO: replace this mock module
+from .client.mock_server import get_tool_calling_function
 from .db_tmp import db_index, db, tool_name_to_index
 
 from .constants import LOCAL_ENV_PATH
 
 class Hub:
     
-    def __init__(self, api_key, environment_context={}, api_file_path=LOCAL_ENV_PATH):
+    def __init__(self, api_key, environment_context={}, api_dir_path=LOCAL_ENV_PATH):
                 
         self.environment_context = environment_context
         self.user = {
@@ -19,25 +22,86 @@ class Hub:
         }
         self.resolved_endpoint = {}
         
+        self.tool_list = List[str]
+        # This local tool list includes the tools that have been stored in the local file, notice this does not mean their api keys always work
+        
+        # self.definition_list = List[dict]
+        
         # Debug print statements
-        print(f"Initializing aapi with environment_context: {environment_context}")
+        print(f"Initializing with environment_context: {environment_context}")
         # print(f"API key set: {'Yes' if api_key else 'No'}")
         
-        os.makedirs(api_file_path, exist_ok=True)
+        if os.path.exists(api_dir_path):
+            # Load local tools
+            for file in os.listdir(api_dir_path):
+                if file.endswith('.py'):
+                    self.tool_list.append(file[:-3]) 
+            print(f"{len(self.tool_list)} local tools loaded")
+
+            if not os.path.exists(os.path.join(api_dir_path, '.api_keys')):
+                os.makedirs(os.path.join(api_dir_path, '.api_keys'))
+                
+            if not os.path.exists(os.path.join(api_dir_path, '.config')):
+                os.makedirs(os.path.join(api_dir_path, '.config'))
+
+        else:
+            os.makedirs(api_dir_path)
         
         # Maintain 3rd party API Keys 
         # ##TODO: save the API at serverside
-        self.api_file_path = os.path.join(api_file_path, '.api_key')
-        self.api_config_path = os.path.join(api_file_path, '.config')
-                    
+        self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
+        self.api_config_path = os.path.join(api_dir_path, '.config')
+
+    def local_tool_def(self, tool_name: str) -> dict:
+        try:
+            # assert tool_name in self.tool_list
+            return parse_tool_definition(LOCAL_ENV_PATH, tool_name)
+        except Exception as e:
+            raise ValueError(f"{tool_name} Parse tool definition failed. Please check if {LOCAL_ENV_PATH}/{tool_name}.py is valid: {e}")
+                       
     def tools(self, tool_list: List) -> List[dict]:
+        """_summary_
+        Initialize toolset, including load existing tools and set up new tools
+        Args:
+            tool_list (List): _description_
+
+        Raises:
+            ValueError: tool definition parsing failed
+
+        Returns:
+            List[dict]: tool definition list
+        """
         
-        # TODO: Validate if 
-        # 1. entry in tool_list is valid in our db 
-        # 2. check dependencies - warning before the execution stage?
+        definition_list = []
+        for i in tool_list: 
+            if isinstance(i, str):
+                if i in self.tool_list:
+                    definition_list.append(self.local_tool_def(i))
+                else:
+                    response = self._setup_tool(i)
+                    definition_list.append(response)
+
+            elif isinstance(i, dict):
+                # TODO: check if it is a valid tool definition schema
+                print(f"Directly add dictionary as tool definition")
+                definition_list.append(i)
+            else:
+                raise ValueError("Tool list should be a list of strings or dictionaries")
         
-        self.definition_list = definition(tool_list)
+        # definition(i)
+        
         return self.definition_list
+        
+    def _setup_tool(self, tool_name):
+        
+        # TODO: check dependencies - warning before the execution stage?
+        instruction, tool_def, func_body = get_tool_calling_function(tool_name)
+        try:
+            write_tool_to_local(LOCAL_ENV_PATH, tool_def, func_body)
+            return tool_def
+        except Exception as e:
+            raise ValueError(f"Failed to write tool to local environment: {e}")
+    
         
     def verification(self, api_name):
         """_summary_
@@ -109,26 +173,28 @@ class Hub:
                         # Extract the inter_api_key from the line
                         inter_api_key = line.strip().split('=')[1].strip().strip("'")
                         break
-                
-        if not api_key_found and api_key_flg == 1:
-            # If local API key is not found
-            status, inter_api_key = create_inter_api_key(legal_api_name, self.api_file_path, self.user, api_key_flg=api_key_flg)  
-        elif api_key_flg == 2:
-            # If api key is optional, still create a null string
-            print(f"API key is optional for {legal_api_name}. Do not use key temporarily.")
-            inter_api_key = ''
-            status = True
-            
-        if status:
-            with open(self.api_file_path, 'w') as f:
-                f.write(f"ACTION_{legal_api_name}_KEY = '{inter_api_key}'\n")
-        else:
-            raise ValueError(f"Failed to create {legal_api_name} key")  
+                    
+        if not api_key_found:
+            status = False
+            if api_key_flg == 1:
+                # If local API key is not found
+                status, inter_api_key = create_inter_api_key(legal_api_name, self.api_file_path, self.user, api_key_flg=api_key_flg)  
+            elif api_key_flg == 2:
+                # If api key is optional, still create a null string
+                print(f"API key is optional for {legal_api_name}. Do not use key temporarily.")
+                inter_api_key = ''
+                status = True   
+    
+            if status:
+                with open(self.api_file_path, 'w') as f:
+                    f.write(f"ACTION_{legal_api_name}_KEY = '{inter_api_key}'\n")
+            else:
+                raise ValueError(f"Failed to create {legal_api_name} key")  
         
         return True, provider_name, action_name, inter_api_key
-        
-          
-    def _act(self, api_name, input_params, endpoint_cache=True):
+           
+    @deprecated
+    def _act_local(self, api_name, input_params, endpoint_cache=True):
 
         assert isinstance(api_name, str)
         
@@ -199,6 +265,15 @@ class Hub:
         
         return data, output_schema
     
+    def _act(self, api_name, input_params, endpoint_cache=True):
+        
+        from .server_tmp import google_search_tool
+        
+        if api_name in db_index:    
+            if api_name == "GOOGLE_SEARCH":
+                return google_search_tool(input_params['q'], None) # TODO
+        else:
+            raise NotImplementedError
 
     def act(self, response_object, observer=False):
         # TODO: rename to response_act ?
