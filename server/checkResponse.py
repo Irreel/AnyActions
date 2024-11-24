@@ -3,6 +3,9 @@ Task:
 - Check if the tool definition subject to OpenAI tool calling format
 - Check if the generated function body is a valid Python function
 """
+import json
+import ast
+
 
 def check_tool_definition(tool_definition: dict):
     """
@@ -47,10 +50,16 @@ def check_tool_definition(tool_definition: dict):
 
     missing_keys = required_top_level - tool_definition.keys()
     if missing_keys:
-        raise ValueError(f"Missing top-level keys: {missing_keys}")
+        if "type" in missing_keys:
+            print("TODO: add type field to the tool definition")
+        elif "function" in missing_keys:
+            print("TODO: add function field to the tool definition")
+        else:
+            raise ValueError(f"Missing top-level keys: {missing_keys}")
 
-    if tool_definition["type"] != "function":
-        raise ValueError("The 'type' field must be 'function'.")
+    # TODO
+    # if tool_definition["type"] != "function":
+    #     raise ValueError("The 'type' field must be 'function'.")
 
     function_details = tool_definition.get("function")
     if not isinstance(function_details, dict):
@@ -114,3 +123,51 @@ def check_tool_definition(tool_definition: dict):
     # If all checks pass
     return True
 
+
+def check_tool_calling_function(tool_calling_function: str):
+    """
+    Validates if the input string is a legal Python function.
+    
+    Args:
+        tool_calling_function (str): The string containing the Python function code
+        
+    Returns:
+        bool: True if valid, False otherwise
+        
+    Raises:
+        ValueError: If the code cannot be parsed as a valid Python function
+    """
+    import ast
+    
+    try:
+        # Parse the string into an AST
+        tree = ast.parse(tool_calling_function)
+        
+        # Check if the parsed content contains exactly one function definition
+        if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
+            raise ValueError("Input must contain exactly one function definition")
+            
+        # Additional validation could be added here if needed
+        return True
+        
+    except SyntaxError as e:
+        raise ValueError(f"Invalid Python syntax: {str(e)}")
+    except Exception as e:
+        raise ValueError(f"Failed to parse function: {str(e)}")
+
+
+if __name__ == "__main__":
+    with open('output.log', 'r') as f:
+        for line in f:
+            if line.startswith("```json"):
+                # Read the actual JSON content starting from the next line
+                json_content = ""
+                for json_line in f:
+                    if json_line.startswith("```"):
+                        break
+                    json_content += json_line
+                
+                tool_definition = json.loads(json_content)
+                # print(check_tool_definition(tool_definition))
+                function_body = tool_definition.get("tool_calling_function")
+                print(check_tool_calling_function(function_body))

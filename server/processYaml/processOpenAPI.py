@@ -1,6 +1,7 @@
 import yaml
 from jinja2 import Template
 import logging
+from prompts import genDscpFromYaml_withNoExec
 
 def process_openapi_yaml(yaml_content):
     """
@@ -84,7 +85,6 @@ def {{ details.get('operationId', method + '_' + path.replace('/', '_').strip('_
     functions_code = function_template.render(paths=paths, base_url=base_url)
     return functions_code
 
-
 if __name__ == "__main__":
     # Configure logging
     logging.basicConfig(
@@ -94,10 +94,13 @@ if __name__ == "__main__":
     )
     
     try:
-        with open('../APIdb/sample/brex.io/2021.12/openapi.yaml', 'r') as f:
+        with open('/Users/zhao/Documents/Startup/ProjActions/AnyActions/APIdb/sample/api.gov.uk/vehicle-enquiry/1.1.0/openapi.yaml', 'r') as f:
             spec = yaml.safe_load(f)
             
         code = generate_client_functions_openapi(spec)
+        
+        res = process_openapi_yaml(spec)
+        print(res)
         
         with open('client.py', 'w') as f:
             f.write(code)
