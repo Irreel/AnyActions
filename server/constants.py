@@ -24,3 +24,14 @@ class Function(BaseModel):
 class ToolDefinition(BaseModel):
     type: str = "function"
     function: Function
+    
+class rawResponse(BaseModel):
+    instruction: str
+    tool_definition: ToolDefinition
+    tool_calling_function: str
+    exec_sh: Optional[str] = None
+    
+class rawResponseWithNoExec(BaseModel):
+    instruction: str
+    tool_definition: ToolDefinition
+    tool_calling_function: str
