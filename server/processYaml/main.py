@@ -47,10 +47,4 @@ def load_openapi_files():
     return openapi_files
 
 if __name__ == "__main__":
-    code = generate_functions('api_spec.yaml')
-    with open('api_functions.py', 'w') as f:
-        f.write(code)
-
-
-if __name__ == "__main__":
-    load_openapi_files()
+    raise NotImplementedError

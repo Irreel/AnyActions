@@ -2,3 +2,4 @@ python-dotenv
 anthropic
 openai
 requests
+PyYAML

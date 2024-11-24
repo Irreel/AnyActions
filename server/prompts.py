@@ -40,10 +40,10 @@ For the tool calling function, if it asks for an authorization token, you need t
 Some information might be incomplete in the YAML file, so you need to infer from the endpoint description. If you are inferring a "name" in tool_definition, make sure the name is not duplicated with other endpoints in this YAML file.
 
 You are processing the following YAML file this turn:
-[source_yaml]
+{source_yaml}
 
 Specify the endpoint you are processing based on the following information:
-[target_endpoint]
+{target_endpoint}
 """
 
 genDscpFromYaml_withExec = """
@@ -53,4 +53,29 @@ genDscpFromYaml_withExec = """
 
 getInstructionFromDscp = """
 Application website and application documentation link:
+"""
+
+structuredResponse = """
+Please provide your response in the following JSON format:
+
+{
+    "instruction": "A clear instruction for the user explaining what will be done",
+    "tool_definition": {
+        "function": {
+            "name": "name_of_the_function",
+            "description": "description_of_what_the_function_does",
+            "parameters": {
+                "properties": {
+                    "param1": {
+                        "type": "type_of_parameter",
+                        "description": "description_of_parameter"
+                    }
+                    // Add more parameters as needed
+                },
+                "required": ["list", "of", "required", "parameters"]
+            }
+        }
+    },
+    "tool_calling_function": "the_actual_function_call_python_code"
+}
 """
