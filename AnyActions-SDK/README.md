@@ -1,10 +1,10 @@
 # Project Structure
 ```
-├── my_project/
+├── AnyActions-SDK/
 │   ├── README.md
 │   ├── .env                # environment variables definition
 │   ├── .env.example        # documentation for .env
-│   ├── conf.py             # documentation plugin
+│   ├── conf.py             # auto documentation plugin
 │   ├── poetry.lock
 │   ├── pyproject.toml      # poetry config
 │   ├── anyactions/         # source
@@ -46,7 +46,13 @@ $ poetry install
 $ poetry add pendulum
 ```
 
-6. Exit development
+6. Run a script
+```
+$ poetry run <command>
+$ poetry run python3 anyactions/main.py
+```
+
+7. Exit development
 ```
 $ deactivate
 ```
