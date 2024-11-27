@@ -15,7 +15,7 @@ $ $VENV_PATH/bin/pip install poetry
 $ source $VENV_PATH/bin/activate
 ```
 
-4. **[First time run]** Install dependencies
+4. Install dependencies and initialize virtual environment
 ```
 $ poetry install
 ```
