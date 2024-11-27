@@ -9,29 +9,13 @@
 │   ├── pyproject.toml      # poetry config
 │   ├── anyactions/         # source
 │   │   ├── __init__.py
-│   │   ├── main.py
+│   │   ├── main.py         # main entry point
 |   |   └── ...
 |   ├── tests/
 │   │   └── ...
 ```
 
 # Setup
-Initialize AWS credentials. Put the following in your `.env`:
-```
-export AWS_SHARED_CREDENTIALS_FILE=~/.aws/credentials
-export AWS_CONFIG_FILE=~/.aws/config
-```
-Put in `~/.aws/credentials`:
-```
-[default]
-aws_access_key_id = YOUR_ACCESS_KEY
-aws_secret_access_key = YOUR_SECRET_KEY
-```
-Put in `~/.aws.config`:
-```
-[default]
-region=us-east-1
-```
 Initialize .env file. See `.env.example` for documentation of what's needed.
 
 # Development
