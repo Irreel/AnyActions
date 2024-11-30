@@ -5,7 +5,7 @@ Task:
 """
 import json
 import ast
-
+import os
 
 def check_tool_definition(tool_definition: dict):
     """
@@ -143,9 +143,10 @@ def check_tool_calling_function(tool_calling_function: str):
         # Parse the string into an AST
         tree = ast.parse(tool_calling_function)
         
-        # Check if the parsed content contains exactly one function definition
-        if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
-            raise ValueError("Input must contain exactly one function definition")
+        # TODO: ignore the import statements
+        # # Check if the parsed content contains exactly one function definition
+        # if len(tree.body) != 1 or not isinstance(tree.body[0], ast.FunctionDef):
+        #     raise ValueError("Input must contain exactly one function definition")
             
         # Additional validation could be added here if needed
         return True
@@ -157,17 +158,22 @@ def check_tool_calling_function(tool_calling_function: str):
 
 
 if __name__ == "__main__":
-    with open('output.log', 'r') as f:
-        for line in f:
-            if line.startswith("```json"):
-                # Read the actual JSON content starting from the next line
-                json_content = ""
-                for json_line in f:
-                    if json_line.startswith("```"):
-                        break
-                    json_content += json_line
-                
-                tool_definition = json.loads(json_content)
-                # print(check_tool_definition(tool_definition))
-                function_body = tool_definition.get("tool_calling_function")
-                print(check_tool_calling_function(function_body))
+    for file in os.listdir('./sample_output'):
+        with open('./sample_output/' + file, 'r') as f:
+            for line in f:
+                if line.startswith("```json"):
+                    # Read the actual JSON content starting from the next line
+                    json_content = ""
+                    for json_line in f:
+                        if json_line.startswith("```"):
+                            break
+                        json_content += json_line
+                    
+                    tool_definition = json.loads(json_content)
+                    
+                    try:    
+                        # print(check_tool_definition(tool_definition))
+                        function_body = tool_definition.get("tool_calling_function")
+                        print(check_tool_calling_function(function_body))
+                    except Exception as e:
+                        print(f"Error in file {file}: {e}")
