@@ -12,7 +12,7 @@ from prompts import *
 This function generates an API description file which includes:
     the tool description passed to LLM
     the function description
-    the function parameters description
+    the python function
 """
 
 
@@ -74,26 +74,73 @@ def responseFormatCheck(response: str):
         raise ValueError(f"Invalid response format: {str(e)}")
 
 
-def shortenYaml(endpoint: dict, yaml_path: str):
-    raise NotImplementedError
+def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
+    """
+    Shorten the yaml file to only include the target endpoint and context
+    Only support OpenAPI
+    
+    Args:
+        endpoint (dict): Dictionary containing endpoint information including operationId
+        yaml_path (str): Path to the OpenAPI YAML file
+        
+    Returns:
+        dict: Shortened YAML dictionary containing only relevant endpoint info and API provider details
+    """
+    try:
+        with open(yaml_path, 'r') as f:
+            full_yaml = yaml.safe_load(f)
+            
+        # Create new yaml with only necessary parts
+        shortened_yaml = {
+            # Keep API provider info
+            'openapi': full_yaml.get('openapi'),
+            'info': full_yaml.get('info'),
+            'servers': full_yaml.get('servers'),
+            'tags': full_yaml.get('tags'),
+            'paths': {}
+        }
+        
+        # Find the path containing our target operationId
+        target_path = None
+        target_method = None
+        
+        for path, methods in full_yaml.get('paths', {}).items():
+            for method, details in methods.items():
+                if details.get('operationId') == endpoint.get('name'):
+                    target_path = path
+                    target_method = method
+                    break
+            if target_path:
+                break
+                
+        if target_path:
+            shortened_yaml['paths'][target_path] = {target_method: full_yaml['paths'][target_path][target_method]}
+                
+        return shortened_yaml
+        
+    except Exception as e:
+        print(f"Error shortening OpenAPI YAML for {endpoint['name']}: {e}")
 
 if __name__ == "__main__":
     # Try generated from the sample yaml set
     DATA_DIR = '/Users/zhao/Documents/Startup/ProjActions/AnyActions/APIdb/sample'
+    OUTPUT_DIR = './sample_output'
     for root, dirs, files in os.walk(DATA_DIR):
         for file in files:
             if file.endswith('.yaml'):
                 yaml_path = os.path.join(root, file)
                 print(f"Processing {yaml_path}")
                 yaml_content = yaml.safe_load(open(yaml_path, 'r'))
-                endpoints = process_openapi_yaml(yaml_content)
+                if file.startswith('openapi'):
+                    endpoints = process_openapi_yaml(yaml_content)
+                else:
+                    print(f"Unsupported swagger type for now")
+                    continue
                 for endpoint in endpoints:
                     r = genDscpFromYaml(endpoint, yaml_path)
                     
-                    with open('output.log', 'a') as f:
+                    with open(OUTPUT_DIR + '/' + endpoint.get('name', 'unnamed') + '_output.log', 'a') as f:
                         f.write(f"\n\n=== Processing endpoint {endpoint.get('name', 'unnamed')} from {yaml_path} ===\n")
                         f.write(r)
                         f.write("\n")
-                    
-                    raise ValueError("Stop here")
                 

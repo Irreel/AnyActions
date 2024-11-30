@@ -37,7 +37,7 @@ class rawResponse(BaseModel):
     instruction: str
     tool_definition: ToolDefinition
     tool_calling_function: str
-    exec_sh: Optional[str] = None
+    exec_sh: Optional[str]
     
 class rawResponseWithNoExec(BaseModel):
     instruction: str
