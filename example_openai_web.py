@@ -14,7 +14,12 @@ def get_delivery_date(order_id):
 
 # Define the get_delivery_date function as a tool
 def get_delivery_date_tool(order_id):
+    
+    #  ....
+    
+    
     delivery_date = get_delivery_date(order_id)
+    
     return f"The delivery date for order {order_id} is {delivery_date}."
 
 

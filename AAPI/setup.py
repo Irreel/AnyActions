@@ -7,7 +7,7 @@ setup(
     install_requires=[
         # Add any dependencies your library needs
     ],
-    author="Your Name",
+    author="AnyActions",
     author_email="your.email@example.com",
     description="A short description of AAPI",
     long_description=open("README.md").read(),
@@ -18,5 +18,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.10",
 )

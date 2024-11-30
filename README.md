@@ -2,6 +2,8 @@
 （Just a random name for now）
 
 ## Setup
+`python >= 3.10`
+
 Currently, the library does not have any dependencies, but you need to setup OpenAI or Claude API key in `.env` for running the use cases.
 
 Besides, to run `usecase_claude_web_wAPIkey.py`, you need to setup the API key at SerpAPI website and add it in `aapi/register_api_tmp.py`.

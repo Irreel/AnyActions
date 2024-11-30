@@ -13,3 +13,6 @@ Deployed on AWS S3, Lambda, and DynamoDb
     - 2: API key is optional. For instance, Jira supports anonymous access which has less permissions than an authenticated user.
 
 `ai_tool_desc` this field is tentative and only experiment on Claude calling. Tool calling in openAI has different schema.
+
+## Notes
+Can use `openapi-generator` to generate OpenAPI yaml file from other formats like swagger yaml file.
