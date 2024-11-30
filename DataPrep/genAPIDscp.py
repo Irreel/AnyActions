@@ -1,8 +1,9 @@
 import os
+import json
 import yaml
 import dotenv
 from openai import OpenAI
-from constants import *
+from formats import *
 
 from processYaml.processOpenAPI import process_openapi_yaml
 from prompts import *
@@ -14,6 +15,10 @@ This function generates an API description file which includes:
     the function description
     the python function
 """
+
+
+def genDscpFromSearch(api_name: str, api_provider: str):
+    pass
 
 
 def genDscpFromYaml(endpoint: dict, source_yaml_path: str):
@@ -123,24 +128,35 @@ def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
 
 if __name__ == "__main__":
     # Try generated from the sample yaml set
-    DATA_DIR = '/Users/zhao/Documents/Startup/ProjActions/AnyActions/APIdb/sample'
+    DATA_DIR = '../APIdb/sample'
     OUTPUT_DIR = './sample_output'
-    for root, dirs, files in os.walk(DATA_DIR):
-        for file in files:
-            if file.endswith('.yaml'):
-                yaml_path = os.path.join(root, file)
-                print(f"Processing {yaml_path}")
-                yaml_content = yaml.safe_load(open(yaml_path, 'r'))
-                if file.startswith('openapi'):
-                    endpoints = process_openapi_yaml(yaml_content)
-                else:
-                    print(f"Unsupported swagger type for now")
-                    continue
-                for endpoint in endpoints:
-                    r = genDscpFromYaml(endpoint, yaml_path)
+    for service_provider in os.listdir(DATA_DIR):
+        for root, dirs, files in os.walk(DATA_DIR + '/' + service_provider):
+            for file in files:
+                if file.endswith('.yaml'):
+                    yaml_path = os.path.join(root, file)
+                    print(f"Processing {yaml_path}")
+                    yaml_content = yaml.safe_load(open(yaml_path, 'r'))
+                    if file.startswith('openapi'):
+                        endpoints = process_openapi_yaml(yaml_content)
+                    else:
+                        print(f"Unsupported swagger type for now")
+                        continue
+                    for endpoint in endpoints:
+                        r = genDscpFromYaml(endpoint, yaml_path)
+                        
+                        if r.startswith('```json') and r.endswith('```'):
+                            r = r[7:-3].strip('\n')
+                        
+                        if responseFormatCheck(r):
+                            print(f"Valid response format for {endpoint.get('name', 'unnamed')}")
+                        else:
+                            print(f"Invalid response format for {endpoint.get('name', 'unnamed')}")
+                            print(r)
+                            raise Exception
+                        
+                        with open(OUTPUT_DIR + '/' + service_provider + '_' + endpoint.get('name', 'unnamed') + '.json', 'a') as f:
+                            # f.write(f"\n\n=== Processing endpoint {endpoint.get('name', 'unnamed')} from {yaml_path} ===\n")
+                            f.write(r)
+                            # f.write("\n")
                     
-                    with open(OUTPUT_DIR + '/' + endpoint.get('name', 'unnamed') + '_output.log', 'a') as f:
-                        f.write(f"\n\n=== Processing endpoint {endpoint.get('name', 'unnamed')} from {yaml_path} ===\n")
-                        f.write(r)
-                        f.write("\n")
-                
