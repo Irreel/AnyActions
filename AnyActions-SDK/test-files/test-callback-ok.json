@@ -1,10 +1,7 @@
 {
   "name": "Hello World",
-  "action": "print_hello_world",
-  "host": "helloworld.com",
-  "endpoint": "/print",
   "tool_function": "print('Hello, World!')",
-  "parameters": {
+  "tool_definition": {
     "type": "function",
     "properties": {
       "firstname": {
@@ -18,6 +15,6 @@
     },
     "required": ["firstname"]
   },
-  "registration_link": "https://example.com/register"
+  "instruction": "https://example.com/register"
 }
   
