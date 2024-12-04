@@ -265,9 +265,9 @@ def parse_func_str(gen_flg: bool, tool_definition: str, func_str: str):
     def_index = decoded_str.find("def ")
     if def_index != -1:
         if gen_flg:
-            new_line = "from anyactions.base.decorators import *\n@generated_action\n" 
+            new_line = "from anyactions import generated_action\n\n@generated_action\n" 
         else:
-            new_line = "from anyactions.base.decorators import *\n@action\n"
+            new_line = "from anyactions import action\n\n@action\n"
         decoded_str = decoded_str[:def_index] + new_line + decoded_str[def_index:]
         
     # Add tool definition to the annotation

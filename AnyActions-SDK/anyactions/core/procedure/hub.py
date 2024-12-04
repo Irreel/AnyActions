@@ -53,10 +53,12 @@ class ActionHub:
             print(f"{len(self.tool_list)} local tools loaded")
 
             if not os.path.exists(os.path.join(api_dir_path, '.api_keys')):
+                print("Creating .api_keys directory")
                 os.makedirs(os.path.join(api_dir_path, '.api_keys'))
                 
             if not os.path.exists(os.path.join(api_dir_path, '.config')):
                 with open(os.path.join(api_dir_path, '.config'), 'w') as f:
+                    print("Creating .config file")
                     pass
 
         else:
