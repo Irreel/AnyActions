@@ -6,6 +6,7 @@ from openai import OpenAI
 from formats import *
 
 from processYaml.processOpenAPI import process_openapi_yaml
+from processYaml.processSwagger import process_swagger_yaml
 from prompts import *
 
 
@@ -74,9 +75,11 @@ def responseFormatCheck(response: str):
         # Validate against the Pydantic model
         validated_response = rawResponseWithNoExec(**response_dict)
         return True
-        
+    
     except Exception as e:
-        raise ValueError(f"Invalid response format: {str(e)}")
+        print(response_dict)
+        print(f"Invalid response format: {str(e)}")
+        return False
 
 
 def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
@@ -139,8 +142,10 @@ if __name__ == "__main__":
                     yaml_content = yaml.safe_load(open(yaml_path, 'r'))
                     if file.startswith('openapi'):
                         endpoints = process_openapi_yaml(yaml_content)
+                    elif file.startswith('swagger'):
+                        endpoints = process_swagger_yaml(yaml_content)
                     else:
-                        print(f"Unsupported swagger type for now")
+                        print(f"Unsupported type for now {str(file)}")
                         continue
                     for endpoint in endpoints:
                         r = genDscpFromYaml(endpoint, yaml_path)
@@ -148,14 +153,21 @@ if __name__ == "__main__":
                         if r.startswith('```json') and r.endswith('```'):
                             r = r[7:-3].strip('\n')
                         
+                        try:
+                            endpoint_name = json.loads(r).get('tool_definition', {}).get('function', {}).get('name', 'unnamed')
+                        except Exception as e:
+                            print(f"Error parsing response for {endpoint.get('name', 'unnamed')}: {e}")
+                            print(r)
+                            endpoint_name = endpoint.get('name', 'unnamed')
+                        
                         if responseFormatCheck(r):
-                            print(f"Valid response format for {endpoint.get('name', 'unnamed')}")
+                            print(f"Valid response format for {endpoint_name}")
                         else:
-                            print(f"Invalid response format for {endpoint.get('name', 'unnamed')}")
+                            print(f"Invalid response format for {endpoint_name}")
                             print(r)
                             raise Exception
-                        
-                        with open(OUTPUT_DIR + '/' + service_provider + '_' + endpoint.get('name', 'unnamed') + '.json', 'a') as f:
+                    
+                        with open(OUTPUT_DIR + '/' + service_provider + '_' + endpoint_name + '.json', 'a') as f:
                             # f.write(f"\n\n=== Processing endpoint {endpoint.get('name', 'unnamed')} from {yaml_path} ===\n")
                             f.write(r)
                             # f.write("\n")
