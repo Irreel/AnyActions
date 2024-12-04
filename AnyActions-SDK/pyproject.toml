@@ -16,6 +16,7 @@ anthropic = "^0.39.0"
 python-dotenv = "^1.0.1"
 sphinx-autodoc-typehints = "^2.5.0"
 requests = "^2.32.3"
+pendulum = "^3.0.0"
 
 
 [build-system]
