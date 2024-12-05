@@ -1,8 +1,7 @@
-from anyactions.core.client.client import Client
-from anyactions.core.client.request_status import RequestStatus
 import os
 import json
 from dotenv import load_dotenv
+from anyactions.core.client import Client, RequestStatus
 
 def setup():
     load_dotenv()
