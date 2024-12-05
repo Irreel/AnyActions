@@ -547,3 +547,28 @@ def check_tool_definition(tool_definition: dict):
     # If all checks pass
     return True
 
+
+def process_func_str(gen_flg: bool, tool_definition: str, func_str: str):
+    """
+    Parse the tool function to get correct code
+    """
+    
+    # Decode escape sequences like \n and \"
+    decoded_str = func_str.encode('utf-8').decode('unicode_escape')
+    
+    # Add decorator
+    def_index = decoded_str.find("def ")
+    if def_index != -1:
+        if gen_flg:
+            new_line = "from anyactions.base.decorators import *\n@generated_action\n" 
+        else:
+            new_line = "from anyactions.base.decorators import *\n@action\n"
+        decoded_str = decoded_str[:def_index] + new_line + decoded_str[def_index:]
+        
+    # Add tool definition to the annotation
+    if type(tool_definition) == str:
+        decoded_str = '"""_tool_definition_\n[This is the tool definition passing to the LLM]\n' + tool_definition + '\n"""' + "\n\n" + decoded_str
+    elif type(tool_definition) == dict:
+        decoded_str = json.dumps(tool_definition, indent=4) + "\n\n" + decoded_str
+
+    return decoded_str

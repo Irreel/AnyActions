@@ -17,6 +17,16 @@ class TestUtils(unittest.TestCase):
         status, inter_api_key = create_inter_api_key(legal_api_name, api_file_path, user)
         self.assertFalse(status)
         self.assertIsNone(inter_api_key)
+        
+    def test_process_func_str(self):
+        tool_definition = """{
+        "type": "function",
+        "function": {"name": "test_func", "description": "test function", "parameters": {}},
+        }"""
+        func_str = 'def test_func(a, b):\n    return a + b'
+        processed_str = process_func_str(tool_definition, func_str)
+        # self.assertEqual(processed_str, '"""\ndef test_func(a, b):\n    return a + b\n"""\n\n@action\ndef test_func(a, b):\n    return a + b')
+        print(processed_str)
     
 if __name__ == '__main__':
     unittest.main()
