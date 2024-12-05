@@ -19,6 +19,9 @@ This function generates an API description file which includes:
 
 
 def genDscpFromSearch(api_name: str, api_provider: str):
+    """
+    Please check genAPIByByob.ipynb for more details
+    """
     pass
 
 
@@ -30,15 +33,6 @@ def genDscpFromYaml(endpoint: dict, source_yaml_path: str):
     prompt = genDscpFromYaml_withNoExec.replace('{source_yaml}', str(source_yaml)).replace('{target_endpoint}', str(endpoint))
 
     try:
-        # completion = client.beta.chat.completions.parse(
-        #     # model="o1-mini-2024-09-12",
-        #     model="gpt-4o-2024-11-20",
-        #     messages=[  
-        #         {"role": "user", "content": prompt + structuredResponse}
-        #     ],
-        #     # response_format=rawResponseWithNoExec,
-        #     )
-        
         completion = client.chat.completions.create(
             model="o1-mini-2024-09-12",
             # model="gpt-4o-2024-11-20",
@@ -167,7 +161,7 @@ if __name__ == "__main__":
                             print(r)
                             raise Exception
                     
-                        with open(OUTPUT_DIR + '/' + service_provider + '_' + endpoint_name + '.json', 'a') as f:
+                        with open(OUTPUT_DIR + '/' + endpoint_name + '.json', 'a') as f:
                             # f.write(f"\n\n=== Processing endpoint {endpoint.get('name', 'unnamed')} from {yaml_path} ===\n")
                             f.write(r)
                             # f.write("\n")

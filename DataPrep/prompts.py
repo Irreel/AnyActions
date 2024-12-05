@@ -1,5 +1,6 @@
 """
 Manage all the prompts we use here
+Some prompts are deprecated and will be cleaned up in the future
 """
 
 genDscpFromSearch = """
