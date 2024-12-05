@@ -52,17 +52,15 @@ class ActionHub:
                     self.tool_list.append(file[:-3]) 
             print(f"{len(self.tool_list)} local tools loaded")
 
-            if not os.path.exists(os.path.join(api_dir_path, '.api_keys')):
-                print("Creating .api_keys directory")
-                os.makedirs(os.path.join(api_dir_path, '.api_keys'))
-                
-            if not os.path.exists(os.path.join(api_dir_path, '.config')):
-                with open(os.path.join(api_dir_path, '.config'), 'w') as f:
-                    print("Creating .config file")
-                    pass
-
         else:
             os.makedirs(api_dir_path)
+            
+        if not os.path.exists(os.path.join(api_dir_path, '.api_keys')):
+            os.makedirs(os.path.join(api_dir_path, '.api_keys'))
+                
+        if not os.path.exists(os.path.join(api_dir_path, '.config')):
+            with open(os.path.join(api_dir_path, '.config'), 'w') as f:
+                pass
         
         # Maintain 3rd party API Keys 
         self.api_dir_path = api_dir_path
@@ -122,9 +120,10 @@ class ActionHub:
             instruction, tool_def, func_body = response
             func_body = parse_func_str(False, tool_def, func_body)
             tool_def = json.loads(tool_def)
+        elif status == RequestStatus.FORBIDDEN:
+            raise Exception(f"Forbidden: Please check your API key for AnyActions")
         else:
-            # TODO
-            raise NotImplementedError(f"{tool_name} does not exist in the anyactions database")
+            raise Exception(f"Failed to download {tool_name} tool: {status}")
             
         try:
             add_tool_to_local(self.api_dir_path, tool_def, func_body)
