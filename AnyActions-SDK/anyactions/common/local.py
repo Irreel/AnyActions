@@ -35,7 +35,7 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     # raise NotImplementedError("Not implemented")
     pass
 
-def get_all_local_tool_names(api_dir_path, observer=False) -> List[str]:
+def get_all_local_tool_names(api_dir_path: str, observer=False) -> List[str]:
     """Load names of existing tools from local directory"""
     assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
     
@@ -48,7 +48,7 @@ def get_all_local_tool_names(api_dir_path, observer=False) -> List[str]:
         print(f"{len(tool_list)} local tools loaded")
     return tool_list
 
-def get_local_tool_definition(api_dir_path, tool_name, observer=False):
+def get_local_tool_definition(api_dir_path: str, tool_name: str, observer=False):
     """Load a single local tool from local directory"""
     check_local_tool_legit(api_dir_path, tool_name, observer)
     
@@ -56,8 +56,17 @@ def get_local_tool_definition(api_dir_path, tool_name, observer=False):
     if observer:
         print(f"Local tool definition loaded: {tool_definition}")
     return tool_definition
+
+def get_local_api_key(api_dir_path: str, tool_name: str, observer=False):
+    """Get the api key for a local tool"""
+    api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
+    assert os.path.exists(api_key_path), LocalToolException(f"API key for {tool_name} not found in {api_key_path}. Please check if the API key file exists.")
     
-def parse_tool_definition(local_env_path, tool_name: str) -> dict:
+    with open(api_key_path, 'r') as f:
+        api_key = f.read()
+    return api_key
+    
+def parse_tool_definition(local_env_path: str, tool_name: str) -> dict:
     """
     Parses the _tool_definition_ from the specified Python file.
 
@@ -179,7 +188,7 @@ def write_local_tool(api_dir_path: str, tool_definition: dict, tool_func: str, e
         exec_sh (str, optional): Shell commands to execute. Defaults to None.
     """
     
-    tool_name = tool_definition["name"]
+    tool_name = tool_definition.get("name") or tool_definition.get("function").get("name") # Anthropic schema Or OpenAI schema
     tool_file_path = os.path.join(api_dir_path, f"{tool_name}.py")
 
     try:

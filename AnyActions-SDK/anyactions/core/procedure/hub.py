@@ -1,6 +1,3 @@
-from anyactions.core.client import Client, RequestStatus
-# import anyactions.common.procedure.actions as actions
-
 import os
 import json
 import requests
@@ -8,13 +5,14 @@ from getpass import getpass
 from dotenv import load_dotenv
 from typing import List, Dict, Union, Optional
 
+from anyactions.common import *
+from anyactions.common.local import *
 from anyactions.core.abstract import *
 from anyactions.core.retrieve import Retriever
-from anyactions.common.local import *
+from anyactions.core.client import Client, RequestStatus
 
 from .utils import create_inter_api_key
 
-from anyactions.common.protocol.responses import ToolDefinition
 
 # TODO: replace this mock module
 # from .db_tmp import db_index, db, tool_name_to_index
@@ -23,12 +21,13 @@ from anyactions.common.constants import LOCAL_ENV_PATH
 
 class ActionHub:
     
-    def __init__(self, env={}, api_dir_path=LOCAL_ENV_PATH, observer=False):
+    def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, observer=False):
         """
         Initialize the ActionHub class which manages tool loading, API key handling, and tool execution.
         
         Args:
             env (dict, optional): Environment variables for LLM configuration and user machine settings. 
+            model_provider (str, optional): The LLM provider. Only supports "openai" now.
             api_dir_path (str, optional): Path to the directory storing API configurations and tools.
             observer (bool, optional): If True, print debug information. Defaults to False.
                 
@@ -161,8 +160,8 @@ class ActionHub:
                 api_key = getpass("Paste your API key here:")
                 if api_key:
                     # TODO: check if the api_key is already existed
-                    with open(os.path.join(self.api_dir_path, '.api_keys', f"ACTION_{tool_name.upper()}_KEY"), 'w') as f:
-                        f.write(f"ACTION_{tool_name.upper()}_KEY = '{api_key}'\n")
+                    with open(os.path.join(self.api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY"), 'w+') as f:
+                        f.write(f"{api_key}")
                 else:
                     raise Exception("API key is required")
             
@@ -239,7 +238,7 @@ class ActionHub:
                 # Check if the API key for the legal_api_name exists in the file
                 api_key_found = False
                 for line in lines:
-                    if line.strip().startswith(f"ACTION_{legal_api_name}_KEY"):
+                    if line.strip().startswith(f"{legal_api_name}_KEY"):
                         api_key_found = True
                         # Extract the inter_api_key from the line
                         inter_api_key = line.strip().split('=')[1].strip().strip("'")
@@ -258,14 +257,14 @@ class ActionHub:
     
             if status:
                 with open(self.api_file_path, 'w') as f:
-                    f.write(f"ACTION_{legal_api_name}_KEY = '{inter_api_key}'\n")
+                    f.write(f"{legal_api_name}_KEY = '{inter_api_key}'\n")
             else:
                 raise ValueError(f"Failed to create {legal_api_name} key")  
         
         return True, provider_name, action_name, inter_api_key
            
     @deprecated
-    def _act_local(self, api_name, input_params, endpoint_cache=True):
+    def _act_deprecated(self, api_name, input_params, endpoint_cache=True):
 
         assert isinstance(api_name, str)
         
@@ -336,21 +335,73 @@ class ActionHub:
         
         return data, output_schema
     
-    def _act(self, api_name, input_params, endpoint_cache=True):
+    def _act_local(self, action_name, input_params: dict, endpoint_cache=True):
+        """Execute a tool function from a local Python file.
         
-        from .server_tmp import google_search_tool
+        Args:
+            action_name (str): Name of the tool/function to execute
+            input_params (dict): Parameters to pass to the function
+            endpoint_cache (bool, optional): Unused parameter kept for compatibility
         
-        if api_name in db_index:    
-            if api_name == "GOOGLE_SEARCH":
-                return google_search_tool(input_params['q'], None) # TODO
-        else:
-            raise NotImplementedError
+        Returns:
+            tuple: (response_data, output_schema)
+        
+        Raises:
+            ImportError: If the tool module cannot be imported
+            AttributeError: If the tool function cannot be found in the module
+            Exception: For any other errors during execution
+        """
+        try:
+            # Import the module dynamically from the tools directory
+            import importlib.util
+            
+            # Construct the file path
+            module_path = os.path.join(self.api_dir_path, f"{action_name}.py")
+            assert os.path.exists(module_path), LocalToolException(f"Tool {action_name} not found in {module_path}. Please check if the tool function file exists.")
+            
+            # Load the module
+            spec = importlib.util.spec_from_file_location(action_name, module_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            # Get the main function (assumed to be named the same as the action_name)
+            tool_function = getattr(module, action_name)
+            
+            # Get the function signature parameters
+            import inspect
+            params = inspect.signature(tool_function).parameters
+            
+            # Handle api_key parameter if the function requires it
+            if 'api_key' in params:
+                if 'api_key' not in input_params:
+                    api_key = get_local_api_key(self.api_dir_path, action_name)
+                    input_params['api_key'] = api_key
 
-    def act(self, response_object, observer=False):
+            try:
+                response = tool_function(**input_params)
+            except Exception as e:
+                raise Exception(f"Error executing tool function at {module_path}: {e}")
+            
+            # # Get the output schema if it exists in the module
+            # output_schema = getattr(module, 'output_schema', None)
+            
+            # TODO: use MCP
+            # return response, output_schema
+            return response
+            
+        except ImportError as e:
+            raise ImportError(f"Failed to import tool module {action_name}: {e}")
+        except AttributeError as e:
+            raise AttributeError(f"Tool function {action_name} not found in module: {e}")
+        except Exception as e:
+            raise Exception(f"Error executing tool {action_name}: {e}")
+
+    def act(self, response_object):
         """Process and execute tool/function calls from LLM response objects.
         
-        This method handles different types of response objects from various LLM providers
+        This method intended to handle different types of response objects from various LLM providers
         (like OpenAI and Anthropic) and executes the requested tool/function calls.
+        # TODO: Only support OpenAI for now
         
         Args:
             response_object (Union[dict, list]): The response object from an LLM. Supported types:
@@ -375,52 +426,47 @@ class ActionHub:
             >>> result, schema = hub.act(response)
         """
         
-        #######
-        # Parse the response object
-        # TODO: Just a very naive and temporary solution for parsing different response objects. Gonna replace it with a more robust one.
-        #######
-        if isinstance(response_object, list):
-            if len(response_object) == 1:
-                response_object = response_object[0]
-            else:
-                # This is useful for LLM responses which include a tool usage request with other text response 
-                for entry in response_object:
-                    # Assume there is only one tool usage request in model responses
-                    try:
-                        response, output_schema = self.act(entry)
-                        # break once it found the tool usage request
-                        break
-                    except:
-                        raise Exception("Unsupported response object type")
-                return response, output_schema
-            
-        else:
-            # TODO: find a better way to identify the object without installing 3rd party package. 
-            # (Solution 1: some packages re-write these object definition in their library, like langchain, litellm etc.)
-            response_object = dict(response_object)
+        # TODO: Finish the following implementation for multiple tool calls
+        # if isinstance(response_object, list):
+        #     if len(response_object) == 1:
+        #         response_object = response_object[0]
+        #     else:
+        #         # This is useful for LLM responses which include a tool usage request with other text response 
+        #         for entry in response_object:
+        #             # Assume there is only one tool usage request in model responses
+        #             try:
+        #                 response, output_schema = self.act(entry)
+        #                 # break once it found the tool usage request
+        #                 break
+        #             except:
+        #                 pass
+        #         return response, output_schema
+        # else:
+        
+        # TODO: find a better way to identify the object without installing 3rd party package. 
+        # (Solution 1: some packages re-write these object definition in their library, like langchain, litellm etc.)
+        
+        response = dict(response_object)
             
         # Check if it is ChatCompletion object in openai
-        if (isinstance(response_object, dict) and
-            'choices' in response_object and
-            isinstance(response_object['choices'], list) and
-            len(response_object['choices']) > 0 and
-            'message' in response_object['choices'][0]):
+        if ('choices' in response and
+            isinstance(response['choices'], list) and
+            len(response['choices']) > 0 and
+            'message' in dict(response['choices'][0])):
             
-            # Extract the message from the first choice
-            message = response_object['choices'][0]['message']
-            
-            # Check if there are tool calls in the message
-            if 'tool_calls' in message and message['tool_calls'] is not None:
-                for tool_call in message['tool_calls']:
-                    if tool_call.get('type') == 'function':
-                        function_name = tool_call['function']['name']
-                        function_args = json.loads(tool_call['function']['arguments'])
-                        
-                        print(f"Function to call: {function_name}")
-                        print(f"Arguments: {function_args}")
-            else:
-                # If there are no tool calls, just print the content
-                print(f"\n[No tool calling] Model response: {message.get('content')}\n")
+            # Find the message with tool calls
+            for choice in response['choices']:
+                message = dict(dict(choice)['message'])
+                if message.get('tool_calls', None) is not None:
+                    for tool_call in message['tool_calls']:
+                        tool_call_dict = dict(tool_call)
+                        if tool_call_dict.get('type') == 'function':
+                            function_name = dict(tool_call_dict['function'])['name']
+                            function_args = json.loads(dict(tool_call_dict['function'])['arguments'])
+                            if self.observer:
+                                print(f"Function to call: {function_name}")
+                                print(f"Arguments: {function_args}")
+                            break
         
         # if it is ChatCompletionMessage object from OpenAI
         # ...
@@ -428,62 +474,54 @@ class ActionHub:
         # if it is ChatCompletionMessageToolCall object from OpenAI
         # ...
         
-        # Check if it is a ToolUseBlock-like object in claude 
-        elif (isinstance(response_object, dict) and
-            'name' in response_object and
-            'input' in response_object):
-                function_name = response_object['name']
-                function_args = response_object['input']
+        # # Check if it is a ToolUseBlock-like object in claude 
+        # elif (isinstance(response_object, dict) and
+        #     'name' in response_object and
+        #     'input' in response_object):
+        #         function_name = response_object['name']
+        #         function_args = response_object['input']
       
-        
-        # if it is <class 'anthropic.types.message.Message'> in claude
-        elif (isinstance(response_object, dict) and
-            'content' in response_object and
-            'stop_reason' in response_object):
+        # # if it is <class 'anthropic.types.message.Message'> in claude
+        # elif (isinstance(response_object, dict) and
+        #     'content' in response_object and
+        #     'stop_reason' in response_object):
             
-            content = response_object['content']
+        #     content = response_object['content']
             
-            if response_object['stop_reason'] == 'tool_use':
-                for item in content:
-                    # TODO: find a better way to identify these object
-                    item = dict(item)
-                    if item['type'] == 'text':
-                        pass
-                    elif item['type'] == 'tool_use':
-                        function_name = item['name']
-                        function_args = item['input']
+        #     if response_object['stop_reason'] == 'tool_use':
+        #         for item in content:
+        #             # TODO: find a better way to identify these object
+        #             item = dict(item)
+        #             if item['type'] == 'text':
+        #                 pass
+        #             elif item['type'] == 'tool_use':
+        #                 function_name = item['name']
+        #                 function_args = item['input']
                         
-                        print(f"  Tool name: {item['name']}")
-                        print(f"  Tool input: {json.dumps(item['input'], indent=2)}")
-            else:
-                # TODO: testing
-                print(f"\n[No tool calling] Model response: {content}\n")
+        #                 print(f"  Tool name: {item['name']}")
+        #                 print(f"  Tool input: {json.dumps(item['input'], indent=2)}")
+        #     else:
+        #         # TODO: testing
+        #         print(f"\n[No tool calling] Model response: {content}\n")
                 
-                return content, None
+        #         return content, None
             
         else:
             raise Exception("Unsupported response object type")
         
-        
-        ######
-        # TODO: Handle error response from model
-        ######
-        #
+        if 'function_name' not in locals():
+            # If there are no tool calls, just print the content
+            if self.observer:
+                print("\nNo tool calling object found in the model response\n")
+            return response_object
         
         #######
-        # Get action function from db
+        # Run the local action function
         #######
-        legal_api_name= tool_name_to_index[function_name]
         
-        response, output_schema = self._act(legal_api_name, function_args)
+        response = self._act_local(function_name, function_args)
         
-        ######
-        # TODO: Handle error response from 3rd party api like invalid api key, expired api key etc.
-        ######
-        if 'error' in response: # claude error response
-            raise Exception(f"Error: {response['error']}")
-        
-        return response, output_schema
+        return response
         
     
     def call(self, action_name, input_params):

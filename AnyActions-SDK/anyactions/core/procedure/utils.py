@@ -47,7 +47,7 @@ def create_inter_api_key(legal_api_name, api_dir_path, user, api_key_flg=1):
                     inter_api_key = register_api_tmp[legal_api_name]
                     
                 with open(api_file_path, 'w') as f:
-                    f.write(f"ACTION_{legal_api_name}_KEY = '{inter_api_key}'\n")
+                    f.write(f"{legal_api_name}_KEY = '{inter_api_key}'\n")
                 if len(inter_api_key) > 0:
                     print(f"Created a new API key for {legal_api_name} and saved into {api_dir_path}")
                 else:
