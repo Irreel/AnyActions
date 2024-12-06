@@ -1,6 +1,7 @@
 import os
 import json
 import inspect
+from typing import List
 from .exception.anyactions_exceptions import *
 
 def create_local_tools_dir(api_dir_path, observer=False):
@@ -27,11 +28,14 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     
     # Check if api is available
     
-    # return os.path.exists(api_dir_path)
+    # Check if api key exists, if needed
+    
+    # Check if dependencies are satisfied
+    
     # raise NotImplementedError("Not implemented")
     pass
 
-def load_all_local_tool_names(api_dir_path, observer=False) -> List[str]:
+def get_all_local_tool_names(api_dir_path, observer=False) -> List[str]:
     """Load names of existing tools from local directory"""
     assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
     
@@ -44,7 +48,7 @@ def load_all_local_tool_names(api_dir_path, observer=False) -> List[str]:
         print(f"{len(tool_list)} local tools loaded")
     return tool_list
 
-def load_local_tool_definition(api_dir_path, tool_name, observer=False):
+def get_local_tool_definition(api_dir_path, tool_name, observer=False):
     """Load a single local tool from local directory"""
     check_local_tool_legit(api_dir_path, tool_name, observer)
     
@@ -158,6 +162,55 @@ def function_to_json(func) -> dict:
                 "type": "object",
                 "properties": parameters,
                 "required": required,
+                "additionalProperties": False
             },
         },
     }
+
+
+def write_local_tool(api_dir_path: str, tool_definition: dict, tool_func: str, exec_sh=None):
+    """
+    Write tool function to local environment. Might execute shell commands in the future.
+
+    Args:
+        api_dir_path (str): Path to the directory storing API configurations and tools.
+        tool_definition (dict): Tool definition in OpenAI format.
+        tool_func (str): Function code as a string.
+        exec_sh (str, optional): Shell commands to execute. Defaults to None.
+    """
+    
+    tool_name = tool_definition["name"]
+    tool_file_path = os.path.join(api_dir_path, f"{tool_name}.py")
+
+    try:
+        with open(tool_file_path, 'w', encoding='utf-8') as f:
+            ## if Claude
+            # # Prepare function parameters from input_schema
+            # input_schema = tool_definition.get("input_schema", {})
+            # properties = input_schema.get("properties", {})
+            # required = input_schema.get("required", [])
+            
+            ## if OpenAI
+            # input_schema = tool_definition.get("function", {}).get("parameters", {})
+            # properties = input_schema.get("properties", {})
+            # required = input_schema.get("required", [])
+            # param_list = []
+            # for param in properties.items():
+            #     param_name = param.key
+            #     param_attrs = param.value["type"]
+            #     if param_name in required:
+            #         param_list.append(f"{param_name}")
+            #     else:
+            #         default = param_attrs.get("default", "None")
+            #         param_list.append(f"{param_name}={default}")
+            # params = ", ".join(param_list)
+            
+            # Write function body with proper indentation and line breaks
+            f.write(tool_func)
+
+        if exec_sh:
+            # Execute any shell commands if provided
+            subprocess.run(exec_sh, shell=True, check=True)
+            
+    except Exception as e:
+        raise LocalToolException(f"Failed to write tool to {tool_file_path}: {e}")

@@ -16,8 +16,6 @@ from .utils import create_inter_api_key
 
 from anyactions.common.protocol.responses import ToolDefinition
 
-from .utils import add_tool_to_local
-
 # TODO: replace this mock module
 # from .db_tmp import db_index, db, tool_name_to_index
 
@@ -77,7 +75,7 @@ class ActionHub:
         
     def get_local_tool_list(self):
         # This local tool list includes the tools that have been stored in the local file, notice this does not mean their api keys always work
-        return load_all_local_tool_names(self.api_dir_path, self.observer)
+        return get_all_local_tool_names(self.api_dir_path, self.observer)
         
     def tools(self, tool_list: List[str | dict]) -> List[dict]:
         """
@@ -103,16 +101,18 @@ class ActionHub:
             if isinstance(i, str):
                 # Load tools from local
                 if i in local_tool_list:
+                    check_local_tool_legit(self.api_dir_path, i, self.observer)
                     try:
-                        definition_list.append(load_local_tool_definition(self.api_dir_path, i))
+                        definition_list.append(get_local_tool_definition(self.api_dir_path, i))
                     except Exception as e:
                         raise Exception(f"{i} Parse tool definition failed. Please check if {self.api_dir_path}{i}.py is valid: {e}")
                 else:
                     # If not existed in local env, setup new tools
-                    response = self._setup_tool(i)
-                    definition_list.append(response)
+                    parsed_tool_def = self._setup_tool(i)
+                    definition_list.append(parsed_tool_def)
 
             elif isinstance(i, dict):
+                # The entry is a dictionary, add as the tool definition directly
                 try:
                     # Format check
                     tool_def = ToolDefinition(**i)
@@ -129,9 +129,23 @@ class ActionHub:
         
         return definition_list
         
-    def _setup_tool(self, tool_name):
-        
-        # TODO: check dependencies - warning before the execution stage?
+    def _setup_tool(self, tool_name) -> dict:
+        """Set up a new tool by retrieving its definition and handling API key configuration.
+
+        This internal method retrieves the tool definition from the server, writes it to the local
+        environment, and handles API key setup if required.
+
+        Args:
+            tool_name (str): The name of the tool to set up
+
+        Raises:
+            Exception: If tool retrieval from the server fails
+            Exception: If writing the tool to local environment fails
+            Exception: If API key setup is required but not provided
+
+        Returns:
+            dict: tool definition dictionary subject to OpenAI tool calling schema
+        """
         response = self.retriever(tool_name)
         
         try:
@@ -140,10 +154,9 @@ class ActionHub:
             raise Exception(f"Failed to retrieve {tool_name} tool: {e}")
         
         try:
-            add_tool_to_local(self.api_dir_path, tool_def, func_body)
+            write_local_tool(self.api_dir_path, tool_def, func_body)
             
-            # TODO: how to determine if API is optional, read from params?
-            if instruction:
+            if len(instruction) > 0:
                 print(f"You can set up the API key here: {instruction}\n")
                 api_key = getpass("Paste your API key here:")
                 if api_key:
@@ -473,8 +486,8 @@ class ActionHub:
         return response, output_schema
         
     
-    def call(self, api_name, input_params):
-        """This is for calling 3rd party api directly without model"""
+    def call(self, action_name, input_params):
+        """This is for calling tool functions directly without model"""
         
         # TODO
         
