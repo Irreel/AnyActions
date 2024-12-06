@@ -9,6 +9,9 @@ class AnyActionsException(Exception):
     def __repr__(self):
         return self.message.__repr__()
     
+class LocalToolException(AnyActionsException):
+    def __init__(self, message, cause: Exception = None):
+        super().__init__(message, cause)
     
 class AWSInternalException(AnyActionsException):
     def __init__(self, message, cause: Exception = None):

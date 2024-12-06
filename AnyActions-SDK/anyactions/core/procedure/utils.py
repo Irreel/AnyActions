@@ -2,7 +2,7 @@ import json
 import inspect
 from typing import List, Dict
 from pathlib import Path
-from anyactions.common.utils import *
+from anyactions.core.abstract import *
 
 # from .register_api_tmp import *
 # from .db_tmp import db, db_index, tool_name_to_index # db_tmp is to stimulate the real database
@@ -150,53 +150,53 @@ def definition(tool_list: List) -> List[dict]:
         return tool_definition_list
     
 
-def parse_tool_definition(local_env_path, tool_name: str) -> dict:
-    """
-    Parses the _tool_definition_ from the specified Python file.
+# def parse_tool_definition(local_env_path, tool_name: str) -> dict:
+#     """
+#     Parses the _tool_definition_ from the specified Python file.
 
-    Args:
-        local_env_path (Path): The path to the local environment directory.
-        tool_name (str): The name of the tool file (e.g., 'tool_calling_test.py').
+#     Args:
+#         local_env_path (Path): The path to the local environment directory.
+#         tool_name (str): The name of the tool file (e.g., 'tool_calling_test.py').
 
-    Returns:
-        dict: The parsed tool definition.
-    """
+#     Returns:
+#         dict: The parsed tool definition.
+#     """
     
-    tool_path = Path(local_env_path) / f"{tool_name}.py"
+#     tool_path = Path(local_env_path) / f"{tool_name}.py"
     
-    try:
-        with tool_path.open('r', encoding='utf-8') as file:
-            content = file.read()
-    except FileNotFoundError:
-        raise FileNotFoundError(f"Tool calling function not found at path: {tool_path}")
+#     try:
+#         with tool_path.open('r', encoding='utf-8') as file:
+#             content = file.read()
+#     except FileNotFoundError:
+#         raise FileNotFoundError(f"Tool calling function not found at path: {tool_path}")
 
-    try:
-        # Find the start of the _tool_definition_ docstring
-        start_marker = '"""_tool_definition_'
-        start_index = content.find(start_marker)
-        if start_index == -1:
-            raise ValueError("Start marker for _tool_definition_ not found.")
+#     try:
+#         # Find the start of the _tool_definition_ docstring
+#         start_marker = '"""_tool_definition_'
+#         start_index = content.find(start_marker)
+#         if start_index == -1:
+#             raise ValueError("Start marker for _tool_definition_ not found.")
 
-        # Find the end of the docstring
-        end_marker = '"""'
-        end_index = content.find(end_marker, start_index + len(start_marker))
-        if end_index == -1:
-            raise ValueError("End marker for _tool_definition_ not found.")
+#         # Find the end of the docstring
+#         end_marker = '"""'
+#         end_index = content.find(end_marker, start_index + len(start_marker))
+#         if end_index == -1:
+#             raise ValueError("End marker for _tool_definition_ not found.")
 
-        # Extract the JSON part within the docstring
-        docstring_content = content[start_index + len(start_marker):end_index].strip()
+#         # Extract the JSON part within the docstring
+#         docstring_content = content[start_index + len(start_marker):end_index].strip()
 
-        # Assuming the JSON starts after the description line
-        json_start = docstring_content.find('{')
-        json_str = docstring_content[json_start:]
+#         # Assuming the JSON starts after the description line
+#         json_start = docstring_content.find('{')
+#         json_str = docstring_content[json_start:]
 
-        # Parse the JSON string into a dictionary
-        tool_definition = json.loads(json_str)
-    except Exception as e:
-        print(f"Failed to parse tool definition: {e}\nParse to json directly")
-        return function_to_json(content)
+#         # Parse the JSON string into a dictionary
+#         tool_definition = json.loads(json_str)
+#     except Exception as e:
+#         print(f"Failed to parse tool definition: {e}\nParse to json directly")
+#         return function_to_json(content)
 
-    return tool_definition
+#     return tool_definition
     
 
 def add_tool_to_local(api_dir_path: str, tool_definition: dict, tool_func: str, exec_sh=None):

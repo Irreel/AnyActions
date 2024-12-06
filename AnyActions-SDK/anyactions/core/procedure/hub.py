@@ -6,29 +6,48 @@ import json
 import requests
 from getpass import getpass
 from dotenv import load_dotenv
-from typing import List, Dict
+from typing import List, Dict, Union, Optional
 
-from anyactions.common.utils import *
+from anyactions.core.abstract import *
+from anyactions.common.local import *
+
 from .utils import create_inter_api_key
 
 from anyactions.common.base import ToolDefinition
 
-from .utils import add_tool_to_local, parse_func_str, parse_tool_definition
+from .utils import add_tool_to_local, parse_func_str
 
 # TODO: replace this mock module
 # from .db_tmp import db_index, db, tool_name_to_index
 
-from .constants import LOCAL_ENV_PATH
+from anyactions.common.constants import LOCAL_ENV_PATH
 
 class ActionHub:
     
     def __init__(self, env={}, api_dir_path=LOCAL_ENV_PATH):
         """
+        Initialize the ActionHub class which manages tool loading, API key handling, and tool execution.
+        
         Args:
-            api_key (str): The API key for the hub. Optional for now.
-            env (dict): This arg is intended for different LLM calling, and user machine environment if needed. Optional for now.
-            api_dir_path (str): The path to the API directory
-        """      
+            env (dict, optional): Environment variables for LLM configuration and user machine settings. 
+            api_dir_path (str, optional): Path to the directory storing API configurations and tools.
+                
+        Directory Structure Created:
+            - api_dir_path/
+                - .api_keys/     # Directory storing API keys for different tools
+                - .config        # Configuration file for the hub
+                - *.py          # Python files containing tool definitions
+                
+        Attributes:
+            env (dict): Stored environment variables
+            base_url (str): Base URL for AWS Gateway API loaded from environment
+            user (dict): User credentials including API key
+            # TODO: resolved_endpoint (dict): Cache for resolved API endpoints
+            tool_list (List[str]): List of locally available tool names
+            api_dir_path (str): Path to API directory
+            api_keys_path (str): Path to API keys directory
+            api_config_path (str): Path to config file
+        """
         self.env = env
         
         load_dotenv()
@@ -39,39 +58,29 @@ class ActionHub:
         
         self.resolved_endpoint = {}
         
+        ## Local tool loading
         self.tool_list: List[str] = []
         # This local tool list includes the tools that have been stored in the local file, notice this does not mean their api keys always work
         
-        # print(f"Initializing with env: {envi}")
-        # print(f"API key set: {'Yes' if api_key else 'No'}")
-        
         if os.path.exists(api_dir_path):
             # Load local tools
-            for file in os.listdir(api_dir_path):
-                if file.endswith('.py'):
-                    self.tool_list.append(file[:-3]) 
-            print(f"{len(self.tool_list)} local tools loaded")
-
+            self.tool_list = load_all_local_tool_names(api_dir_path)
         else:
-            os.makedirs(api_dir_path)
-            
-        if not os.path.exists(os.path.join(api_dir_path, '.api_keys')):
-            os.makedirs(os.path.join(api_dir_path, '.api_keys'))
-                
-        if not os.path.exists(os.path.join(api_dir_path, '.config')):
-            with open(os.path.join(api_dir_path, '.config'), 'w') as f:
-                pass
+            create_local_tools_dir(api_dir_path)
         
-        # Maintain 3rd party API Keys 
+        ## API Key Initialization
         self.api_dir_path = api_dir_path
         self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
         self.api_config_path = os.path.join(api_dir_path, '.config')
-                       
+        
+    def _list_tools(self):
+        return self.tool_list
+        
     def tools(self, tool_list: List[str | dict]) -> List[dict]:
-        """_summary_
-        Initialize toolset, including load existing tools and set up new tools
+        """Initialize a set of tool definitions available to LLM, including loading existing local tools and setting up new tools
+        
         Args:
-            tool_list (List): _description_
+            tool_list (List): List of tool names or tool definitions
 
         Raises:
             ValueError: tool definition parsing failed
@@ -86,9 +95,9 @@ class ActionHub:
                 # Load tools from local
                 if i in self.tool_list:
                     try:
-                        definition_list.append(parse_tool_definition(self.api_dir_path, i))
+                        definition_list.append(load_local_tool_definition(self.api_dir_path, i))
                     except Exception as e:
-                        raise ValueError(f"{i} Parse tool definition failed. Please check if {self.api_dir_path}{i}.py is valid: {e}")
+                        raise Exception(f"{i} Parse tool definition failed. Please check if {self.api_dir_path}{i}.py is valid: {e}")
                 else:
                     # If not existed in local env, setup new tools
                     response = self._setup_tool(i)
@@ -319,15 +328,32 @@ class ActionHub:
             raise NotImplementedError
 
     def act(self, response_object, observer=False):
-        # TODO: rename to response_act ?
-        """_summary_
+        """Process and execute tool/function calls from LLM response objects.
+        
+        This method handles different types of response objects from various LLM providers
+        (like OpenAI and Anthropic) and executes the requested tool/function calls.
         
         Args:
-            observer (bool): If True, return the tool being called and its arguments
-            
-        Support object type: 
-            - openai.types.chat.chat_completion.ChatCompletion
-            - anthropic.types.message.Message
+            response_object (Union[dict, list]): The response object from an LLM. Supported types:
+                - openai.types.chat.chat_completion.ChatCompletion
+                - anthropic.types.message.Message
+                - List containing either of the above
+            observer (bool, optional): If True, returns the tool being called and its arguments
+                instead of executing the call. Defaults to False.
+                
+        Returns:
+            Tuple[Any, Optional[dict]]: A tuple containing:
+                - response: The result from executing the tool/function call
+                - output_schema: Schema definition for the response format, or None if no schema exists
+                
+        Raises:
+            Exception: If the response object type is unsupported or if there are errors in
+                tool execution or API responses
+                
+        Examples:
+            >>> hub = ActionHub()
+            >>> response = llm.chat(...)  # Get response from LLM
+            >>> result, schema = hub.act(response)
         """
         
         #######

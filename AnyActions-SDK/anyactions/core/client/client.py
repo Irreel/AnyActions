@@ -64,6 +64,7 @@ class Client:
         :param action_name: The name of the action to download.
         :return: A tuple containing the instruction, tool definition, and function body.
         """
+        print(f"Downloading {action_name}")
         status, response = self.get("download", {"action_name": action_name})
         if status == RequestStatus.OK:
             return (status, self.get_action_spec(response))
