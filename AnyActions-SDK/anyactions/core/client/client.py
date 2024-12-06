@@ -73,9 +73,10 @@ class Client:
 
     def get_action_spec(self, response: dict):        
         if response["message"] == "Files retrieved successfully":
-            instruction = response["files"]["registration_link"]
+            instruction = response["files"].get("registration_link", None)
             tool_def = response["files"]["tool_definition.json"]
             func_body = response["files"]["tools.py"]
-            return (instruction, tool_def, func_body)
+            gen_flg = response["files"]["gen_flg"]
+            return (instruction, tool_def, func_body, gen_flg)
         else:
             return RequestStatus.INTERNAL_SERVER_ERROR
