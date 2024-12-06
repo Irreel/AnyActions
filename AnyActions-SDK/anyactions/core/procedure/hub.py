@@ -9,13 +9,14 @@ from dotenv import load_dotenv
 from typing import List, Dict, Union, Optional
 
 from anyactions.core.abstract import *
+from anyactions.core.retrieve import Retriever
 from anyactions.common.local import *
 
 from .utils import create_inter_api_key
 
 from anyactions.common.base import ToolDefinition
 
-from .utils import add_tool_to_local, parse_func_str
+from .utils import add_tool_to_local
 
 # TODO: replace this mock module
 # from .db_tmp import db_index, db, tool_name_to_index
@@ -24,13 +25,14 @@ from anyactions.common.constants import LOCAL_ENV_PATH
 
 class ActionHub:
     
-    def __init__(self, env={}, api_dir_path=LOCAL_ENV_PATH):
+    def __init__(self, env={}, api_dir_path=LOCAL_ENV_PATH, observer=False):
         """
         Initialize the ActionHub class which manages tool loading, API key handling, and tool execution.
         
         Args:
             env (dict, optional): Environment variables for LLM configuration and user machine settings. 
             api_dir_path (str, optional): Path to the directory storing API configurations and tools.
+            observer (bool, optional): If True, print debug information. Defaults to False.
                 
         Directory Structure Created:
             - api_dir_path/
@@ -49,14 +51,16 @@ class ActionHub:
             api_config_path (str): Path to config file
         """
         self.env = env
+        self.observer = observer
+        self.resolved_endpoint = {} #TODO: might not be necessary if tool function is generated
         
+        ## Setup client
         load_dotenv()
         self.base_url = os.environ["AWS_GATEWAY_BASE_URL"]
         self.user = {
             "api_key": os.environ["AWS_GATEWAY_API_KEY"],
         }
-        
-        self.resolved_endpoint = {}
+        self.client = Client(self.base_url, self.user["api_key"])
         
         ## Local tool loading
         self.tool_list: List[str] = []
@@ -72,6 +76,7 @@ class ActionHub:
         self.api_dir_path = api_dir_path
         self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
         self.api_config_path = os.path.join(api_dir_path, '.config')
+        
         
     def _list_tools(self):
         return self.tool_list
@@ -120,21 +125,18 @@ class ActionHub:
     def _setup_tool(self, tool_name):
         
         # TODO: check dependencies - warning before the execution stage?
-        # instruction, tool_def, func_body = get_tool_calling_function(tool_name)
         
-        client = Client(self.base_url, self.user["api_key"])
-
-        status, response = client.download(tool_name)
-        if status == RequestStatus.OK:
-            instruction, tool_def, func_body = response
-            func_body = parse_func_str(False, tool_def, func_body)
-            tool_def = json.loads(tool_def)
-        elif status == RequestStatus.FORBIDDEN:
-            raise Exception(f"Forbidden: Please check your API key for AnyActions")
-        else:
-            raise Exception(f"Failed to download {tool_name} tool: {status}")
-            
+        retriever = Retriever(self.client, self.observer)
+        response = retriever.retrieve_tool(tool_name)
+        
         try:
+            gen_flg, instruction, tool_def, func_body = response
+        except Exception as e:
+            print(response)
+            raise ValueError(f"Failed to retrieve {tool_name} tool: {e}")
+        
+        try:
+            
             add_tool_to_local(self.api_dir_path, tool_def, func_body)
             
             # TODO: how to determine if API is optional, read from params?

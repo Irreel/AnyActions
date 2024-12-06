@@ -56,27 +56,3 @@ class Client:
     
     def get_response_status(self, response: requests.Response) -> RequestStatus:
         return RequestStatus.from_http_status(response)
-    
-    def download(self, action_name: str):
-        """
-        Download the tool definition and function body for a given action name.
-
-        :param action_name: The name of the action to download.
-        :return: A tuple containing the instruction, tool definition, and function body.
-        """
-        print(f"Downloading {action_name}")
-        status, response = self.get("download", {"action_name": action_name})
-        if status == RequestStatus.OK:
-            return (status, self.get_action_spec(response))
-        else:
-            return (status, None)
-
-    def get_action_spec(self, response: dict):        
-        if response["message"] == "Files retrieved successfully":
-            instruction = response["files"].get("registration_link", None)
-            tool_def = response["files"]["tool_definition.json"]
-            func_body = response["files"]["tools.py"]
-            gen_flg = response["files"]["gen_flg"]
-            return (instruction, tool_def, func_body, gen_flg)
-        else:
-            return RequestStatus.INTERNAL_SERVER_ERROR
