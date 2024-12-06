@@ -1,4 +1,6 @@
 import os
+import json
+import inspect
 from .exception.anyactions_exceptions import *
 
 def create_local_tools_dir(api_dir_path, observer=False):
@@ -17,7 +19,7 @@ def create_local_tools_dir(api_dir_path, observer=False):
         return False
     
 def check_local_tool_legit(api_dir_path, tool_name, observer=False):
-    """Check if local tools directory exists and with valid api keys"""
+    """Check if local tools directory exists and with api keys"""
     assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
     
     tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
@@ -26,7 +28,8 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     # Check if api is available
     
     # return os.path.exists(api_dir_path)
-    raise NotImplementedError("Not implemented")
+    # raise NotImplementedError("Not implemented")
+    pass
 
 def load_all_local_tool_names(api_dir_path, observer=False):
     """Load existing tools from local directory"""
@@ -66,7 +69,7 @@ def parse_tool_definition(local_env_path, tool_name: str) -> dict:
     tool_path = os.path.join(local_env_path, f"{tool_name}.py")
     
     try:
-        with tool_path.open('r', encoding='utf-8') as file:
+        with open(tool_path, 'r', encoding='utf-8') as file:
             content = file.read()
     except FileNotFoundError:
         raise FileNotFoundError(f"Tool calling function not found at path: {tool_path}")
