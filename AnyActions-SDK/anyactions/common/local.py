@@ -31,12 +31,11 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     # raise NotImplementedError("Not implemented")
     pass
 
-def load_all_local_tool_names(api_dir_path, observer=False):
-    """Load existing tools from local directory"""
-    tool_list = []  # Reset tool list
+def load_all_local_tool_names(api_dir_path, observer=False) -> List[str]:
+    """Load names of existing tools from local directory"""
+    assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
     
-    assert os.path.exists(api_dir_path), f"Local tools directory does not exist: {api_dir_path}"
-    
+    tool_list = [] 
     # Load local tools
     for file in os.listdir(api_dir_path):
         if file.endswith('.py'):

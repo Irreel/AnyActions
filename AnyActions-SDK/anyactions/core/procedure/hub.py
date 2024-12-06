@@ -14,7 +14,7 @@ from anyactions.common.local import *
 
 from .utils import create_inter_api_key
 
-from anyactions.common.base import ToolDefinition
+from anyactions.common.protocol.responses import ToolDefinition
 
 from .utils import add_tool_to_local
 
@@ -45,7 +45,7 @@ class ActionHub:
             base_url (str): Base URL for AWS Gateway API loaded from environment
             user (dict): User credentials including API key
             # TODO: resolved_endpoint (dict): Cache for resolved API endpoints
-            tool_list (List[str]): List of locally available tool names
+            get_tool_list (function -> List[str]): Get list of locally available tool names
             api_dir_path (str): Path to API directory
             api_keys_path (str): Path to API keys directory
             api_config_path (str): Path to config file
@@ -61,14 +61,11 @@ class ActionHub:
             "api_key": os.environ["AWS_GATEWAY_API_KEY"],
         }
         self.client = Client(self.base_url, self.user["api_key"])
+        self.retriever = Retriever(self.client, self.observer)
         
         ## Local tool loading
-        self.tool_list: List[str] = []
-        # This local tool list includes the tools that have been stored in the local file, notice this does not mean their api keys always work
-        
         if os.path.exists(api_dir_path):
-            # Load local tools
-            self.tool_list = load_all_local_tool_names(api_dir_path)
+            pass
         else:
             create_local_tools_dir(api_dir_path)
         
@@ -78,27 +75,34 @@ class ActionHub:
         self.api_config_path = os.path.join(api_dir_path, '.config')
         
         
-    def _list_tools(self):
-        return self.tool_list
+    def get_local_tool_list(self):
+        # This local tool list includes the tools that have been stored in the local file, notice this does not mean their api keys always work
+        return load_all_local_tool_names(self.api_dir_path, self.observer)
         
     def tools(self, tool_list: List[str | dict]) -> List[dict]:
-        """Initialize a set of tool definitions available to LLM, including loading existing local tools and setting up new tools
+        """
+        Initialize a set of tool definitions available to LLM
+        It loads existing local tools and use retriever to set up new tools
+        If the entry in tool_list is a dictionary, it is treated as the tool definition directly
         
         Args:
-            tool_list (List): List of tool names or tool definitions
+            tool_list (List[str | dict]): List of tool names or tool definitions
 
         Raises:
-            ValueError: tool definition parsing failed
+            Exception: tool definition parsing failed
+            ValueError: tool definition is not in the correct format
 
         Returns:
             List[dict]: tool definition list
         """
         
         definition_list = []
+        local_tool_list = self.get_local_tool_list()
+        
         for i in tool_list: 
             if isinstance(i, str):
                 # Load tools from local
-                if i in self.tool_list:
+                if i in local_tool_list:
                     try:
                         definition_list.append(load_local_tool_definition(self.api_dir_path, i))
                     except Exception as e:
@@ -110,13 +114,16 @@ class ActionHub:
 
             elif isinstance(i, dict):
                 try:
+                    # Format check
                     tool_def = ToolDefinition(**i)
                 except Exception as e:
                     print(f"Invalid OpenAI tool definition format: {e}")
-                    print("Still added")
+                    user_input = input("Still added to the tool definition list?(y/n)")
+                    if user_input.lower() == "y":
+                        definition_list.append(i)
+                    else:
+                        raise ValueError("Invalid tool definition format")
 
-                definition_list.append(i)
-            
             else:
                 raise ValueError("Tool list should be a list of strings or dictionaries")
         
@@ -125,18 +132,14 @@ class ActionHub:
     def _setup_tool(self, tool_name):
         
         # TODO: check dependencies - warning before the execution stage?
-        
-        retriever = Retriever(self.client, self.observer)
-        response = retriever.retrieve_tool(tool_name)
+        response = self.retriever(tool_name)
         
         try:
             gen_flg, instruction, tool_def, func_body = response
         except Exception as e:
-            print(response)
-            raise ValueError(f"Failed to retrieve {tool_name} tool: {e}")
+            raise Exception(f"Failed to retrieve {tool_name} tool: {e}")
         
         try:
-            
             add_tool_to_local(self.api_dir_path, tool_def, func_body)
             
             # TODO: how to determine if API is optional, read from params?
@@ -148,13 +151,14 @@ class ActionHub:
                     with open(os.path.join(self.api_dir_path, '.api_keys', f"ACTION_{tool_name.upper()}_KEY"), 'w') as f:
                         f.write(f"ACTION_{tool_name.upper()}_KEY = '{api_key}'\n")
                 else:
-                    raise ValueError("API key is required")
+                    raise Exception("API key is required")
             
-            print(f"{tool_name}.py added")            
+            if self.observer:
+                print(f"{tool_name}.py added")            
             return tool_def
         
         except Exception as e:
-            raise ValueError(f"Failed to set up {tool_name} tool in local environment: {e}")
+            raise Exception(f"Failed to set up {tool_name} tool in local environment: {e}")
     
         
     def verification(self, api_name):

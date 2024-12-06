@@ -4,7 +4,7 @@ from anyactions.core.client.request_status import RequestStatus
 from anyactions.common.protocol.protocols import GetApiByProviderActionRequestBuilder
 
 """
-Interact with the API to retrieve the tool and parse the response
+Interact with the API to retrieve the tool and post-process the response
 """ 
 
 class Retriever:
@@ -12,7 +12,7 @@ class Retriever:
         self.client = client
         self.observer = observer
     
-    def retrieve_tool(self, action_name: str) -> dict:
+    def __call__(self, action_name: str) -> dict:
         """
         Retrieve the Tool Specification for a given action.
 
