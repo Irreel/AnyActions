@@ -7,7 +7,7 @@ from formats import *
 
 from processYaml.processOpenAPI import process_openapi_yaml
 from processYaml.processSwagger import process_swagger_yaml
-from prompts import *
+import prompts
 
 
 """
@@ -37,7 +37,7 @@ def genDscpFromYaml(endpoint: dict, source_yaml_path: str):
             model="o1-mini-2024-09-12",
             # model="gpt-4o-2024-11-20",
             messages=[  
-                {"role": "user", "content": prompt + structuredResponse}
+                {"role": "user", "content": prompt + prompts.structuredResponse}
             ]
             )
         
@@ -79,7 +79,7 @@ def responseFormatCheck(response: str):
 def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
     """
     Shorten the yaml file to only include the target endpoint and context
-    Only support OpenAPI
+    Only support OpenAPI since it searches by operationId
     
     Args:
         endpoint (dict): Dictionary containing endpoint information including operationId

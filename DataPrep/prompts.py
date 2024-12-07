@@ -3,10 +3,6 @@ Manage all the prompts we use here
 Some prompts are deprecated and will be cleaned up in the future
 """
 
-genDscpFromSearch = """
-Provide a google search term to find the API endpoint information and YAML definition based on search query provided below in 4-6 terms
-"""
-
 genDscpFromURL = """
 Here's the documentation: {doc_url} what does the API spec look like for {api_description}?
 """
@@ -52,7 +48,7 @@ Specify the endpoint you are processing based on the following information:
 {target_endpoint}
 """
 
-genDscpFromYaml_withExec = None
+genDscpFromYaml_withExec = NotImplementedError("Not implemented")
 
 
 getInstructionFromDscp = """
@@ -63,7 +59,7 @@ structuredResponse = """
 Please provide your response in the following JSON format:
 
 {
-    "instruction": "A clear instruction for the user explaining what will be done",
+    "instruction": "If the endpoint does not need API key for authentication, you must leave this field blank. Or provide a clear instruction with URL link for the user to set up the API authentication.",
     "tool_definition": {
         "function": {
             "name": "name_of_the_function",
