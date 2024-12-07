@@ -15,9 +15,6 @@ from anyactions.core.procedure.act import Actor
 
 from anyactions.common.constants import LOCAL_ENV_PATH
 
-# TODO: Replace this
-from .utils import create_inter_api_key
-
 class ActionHub:
     
     def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, observer=False):
@@ -247,7 +244,9 @@ class ActionHub:
             status = False
             if api_key_flg == 1:
                 # If local API key is not found
-                status, inter_api_key = create_inter_api_key(legal_api_name, self.api_file_path, self.user, api_key_flg=api_key_flg)  
+                # status, inter_api_key = create_inter_api_key(legal_api_name, self.api_file_path, self.user, api_key_flg=api_key_flg) 
+                # TODO 
+                raise NotImplementedError
             elif api_key_flg == 2:
                 # If api key is optional, still create a null string
                 print(f"API key is optional for {legal_api_name}. Do not use key temporarily.")
@@ -336,91 +335,6 @@ class ActionHub:
             data = response.json()
         
         return data, output_schema
-    
-    @deprecated
-    def _act_local(self, action_name, input_params: dict, endpoint_cache=True):
-        """Execute a tool function from a local Python file.
-        
-        Args:
-            action_name (str): Name of the tool/function to execute
-            input_params (dict): Parameters to pass to the function
-            endpoint_cache (bool, optional): Unused parameter kept for compatibility
-        
-        Returns:
-            tuple: (response_data, output_schema)
-        
-        Raises:
-            ImportError: If the tool module cannot be imported
-            AttributeError: If the tool function cannot be found in the module
-            Exception: For any other errors during execution
-        """
-        try:
-            # Import the module dynamically from the tools directory
-            import importlib.util
-            
-            # Construct the file path
-            module_path = os.path.join(self.api_dir_path, f"{action_name}.py")
-            assert os.path.exists(module_path), LocalToolException(f"Tool {action_name} not found in {module_path}. Please check if the tool function file exists.")
-            
-            # Load the module
-            spec = importlib.util.spec_from_file_location(action_name, module_path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Get the main function (assumed to be named the same as the action_name)
-            tool_function = getattr(module, action_name)
-            
-            # # Read the file content
-            # with open(module_path, 'r') as file:
-            #     code = file.read()
-                
-            # # Create a new namespace that includes the current globals
-            # namespace = globals().copy()
-            
-            # # Execute the code in this namespace
-            # exec(code, namespace)
-            # tool_function = namespace[action_name]
-            
-            # Print decorator information
-            if hasattr(tool_function, '__wrapped__'):
-                print("Decorators found:")
-                current_func = tool_function
-                while hasattr(current_func, '__wrapped__'):
-                    print(f"- {current_func.__name__}")
-                    current_func = current_func.__wrapped__
-                print(f"Original function: {current_func.__name__}")
-            else:
-                print("No decorators found")
-            raise Exception("Stop here")
-            
-            # Get the function signature parameters
-            import inspect
-            params = inspect.signature(tool_function).parameters
-            
-            # Handle api_key parameter if the function requires it
-            if 'api_key' in params:
-                if 'api_key' not in input_params:
-                    api_key = get_local_api_key(self.api_dir_path, action_name)
-                    input_params['api_key'] = api_key
-
-            try:
-                response = tool_function(**input_params)
-            except Exception as e:
-                raise Exception(f"Error executing tool function at {module_path}: {e}")
-            
-            # # Get the output schema if it exists in the module
-            # output_schema = getattr(module, 'output_schema', None)
-            
-            # TODO: use MCP
-            # return response, output_schema
-            return response
-            
-        except ImportError as e:
-            raise ImportError(f"Failed to import tool module {action_name}: {e}")
-        except AttributeError as e:
-            raise AttributeError(f"Tool function {action_name} not found in module: {e}")
-        except Exception as e:
-            raise Exception(f"Error executing tool {action_name}: {e}")
 
     def act(self, response_object):
         

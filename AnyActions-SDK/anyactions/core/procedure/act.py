@@ -1,7 +1,6 @@
 import os
 import json
 import inspect
-import importlib.util
 from typing import Any, Optional, Union, Tuple, Callable
 
 from anyactions.core.client import Client
@@ -9,7 +8,7 @@ from anyactions.core.abstract import action, generated_action
 
 from anyactions.common import *
 from anyactions.common.constants import *
-from anyactions.common.local import get_local_api_key, check_tool_decorator
+from anyactions.common.local import get_local_api_key, check_tool_decorator, load_callable
 from anyactions.common.protocol.protocols import ACTION_SUCCESS, ACTION_FAILURE
 
 class Actor:
@@ -167,11 +166,7 @@ class Actor:
             assert os.path.exists(module_path), LocalToolException(f"Tool {action_name} not found in {module_path}. Please check if the tool function file exists.")
             
             # Load the module
-            spec = importlib.util.spec_from_file_location(action_name, module_path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            # Get the main function (assumed to be named the same as the action_name)
-            tool_function = getattr(module, action_name)
+            tool_function = load_callable(action_name, module_path)
             
             # Get the function signature parameters
             params = inspect.signature(tool_function).parameters
@@ -192,7 +187,6 @@ class Actor:
                     self.callback(action_name, tool_function)
                     return response
                 elif status == ACTION_FAILURE:
-                    
                     raise Exception(f"Error executing tool {module_path}: {response}")
                 
             else:
@@ -207,12 +201,12 @@ class Actor:
             raise Exception(f"Error executing tool {action_name}: {e}")
 
     def callback(self, action_name: str, tool_function: Callable):
-        _status, _response = self.client.post(path=CALLBACK_EP, data=self.upload_request(action_name, tool_function))
-        return _response
+        status, response = self.client.post(path=CALLBACK_EP, data=self.upload_request(action_name, tool_function))
+        return status, response
     
     def upload_request(self, action_name: str, tool_function: Callable) -> dict:
         builder = SaveApiRequestBuilder()
-        builder.set_name(action_name)
+        builder.set_action(action_name)
         # builder.set_tool_function(tool_function)
         return builder.get()
 

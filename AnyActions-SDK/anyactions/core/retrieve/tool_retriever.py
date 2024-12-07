@@ -1,5 +1,6 @@
 import json
 from anyactions.common import *
+from anyactions.common.constants import *
 from anyactions.core.client.client import Client
 from anyactions.core.client.request_status import RequestStatus
 
@@ -25,7 +26,11 @@ class Retriever:
         if (status == RequestStatus.OK):
             return self.parse_response(response)
         elif (status == RequestStatus.NOT_FOUND):
-            if_gen = input(f"Not found [{action_name}] \nMake sure you have the correct action name. Enter 'y' to wild search this API in the internet:")
+            prompt = (
+                f"'{action_name}' not found in AnyActions registry.\n"
+                "Would you like to search for similar APIs online? [y/n]: "
+            )
+            if_gen = input(prompt).lower().strip()
             if if_gen == "y":
                 # TODO: Fall back to generating with LLM
                 # self.client.post("generate", query=self.get_request(action_name))

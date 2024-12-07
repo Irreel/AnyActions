@@ -1,6 +1,7 @@
 import os
 import json
 import inspect
+import importlib.util
 from typing import List, Callable, Any
 from .exception.anyactions_exceptions import *
 
@@ -26,15 +27,40 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
     assert os.path.exists(tool_path), LocalToolException(f"Local tool does not exist: {tool_path}. Check if the tool is registered in ActionHub.")
     
-    # Check if api is available
+    # Check if tool definition is valid
+    tool_def = parse_tool_definition(api_dir_path, tool_name)
     
-    # Check if api key exists, if needed
+    # Check tool name consistency
+    assert tool_def.get("function", {}).get("name") == tool_name, LocalToolException(f"Tool name inconsistency: Check if tool name in tool_definition is consistent with the tool name {tool_def.get('function', {}).get('name')} VS {tool_name}")
+    
+    # Check if api key is needed
+    try:
+        func = load_callable(tool_name, tool_path)
+        signature = inspect.signature(func)
+    except ValueError as e:
+        raise ValueError(
+            f"Failed to get signature for function {func.__name__}: {str(e)}"
+        )
+
+    if "api_key" in signature.parameters:
+        api_key_param = signature.parameters["api_key"]
+        if api_key_param.default == inspect._empty:
+            assert check_local_api_key(api_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key.")
     
     # Check if dependencies are satisfied
     
     # raise NotImplementedError("Not implemented")
-    pass
+    return True
 
+def check_local_api_key(api_dir_path, tool_name, observer=False):
+    """Check if api key is needed and exists"""
+    api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
+    try:
+        assert os.path.exists(api_key_path)
+        return True
+    except AssertionError:
+        return False
+    
 def check_tool_decorator(tool_function: Callable[..., Any]) -> dict:
     """
     Check if a tool function has specific decorators.
@@ -100,6 +126,19 @@ def get_local_api_key(api_dir_path: str, tool_name: str, observer=False):
         api_key = f.read()
     return api_key
     
+def load_callable(action_name: str, file_path: str) -> Callable:
+    """Load a local function from a file"""
+    try:
+        # Load the module
+        spec = importlib.util.spec_from_file_location(action_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        # Get the main function (assumed to be named the same as the action_name)
+        tool_function = getattr(module, action_name)
+        return tool_function
+    except Exception as e:
+        raise LocalToolException(f"Failed to load function {action_name} from {file_path}: {e}")
+    
 def parse_tool_definition(local_env_path: str, tool_name: str) -> dict:
     """
     Parses the _tool_definition_ from the specified Python file.
@@ -118,7 +157,7 @@ def parse_tool_definition(local_env_path: str, tool_name: str) -> dict:
         with open(tool_path, 'r', encoding='utf-8') as file:
             content = file.read()
     except FileNotFoundError:
-        raise FileNotFoundError(f"Tool calling function not found at path: {tool_path}")
+        raise FileNotFoundError(f"Tool calling function {tool_name} not found at path: {tool_path}")
 
     try:
         # Find the start of the _tool_definition_ docstring
@@ -144,12 +183,11 @@ def parse_tool_definition(local_env_path: str, tool_name: str) -> dict:
         tool_definition = json.loads(json_str)
     except Exception as e:
         print(f"Failed to parse tool definition: {e}\nParse to json directly")
-        return function_to_json(content)
+        return function_to_json(load_callable(tool_name, tool_path))
 
     return tool_definition
 
-
-def function_to_json(func) -> dict:
+def function_to_json(func: Callable, skip_api_key=True) -> dict:
     """
     https://github.com/openai/swarm?tab=readme-ov-file#examples
 
@@ -189,13 +227,16 @@ def function_to_json(func) -> dict:
                 f"Unknown type annotation {param.annotation} for parameter {param.name}: {str(e)}"
             )
         parameters[param.name] = {"type": param_type}
+        
+    if skip_api_key:
+        parameters.pop("api_key", None)
 
     required = [
         param.name
         for param in signature.parameters.values()
         if param.default == inspect._empty
     ]
-
+    
     return {
         "type": "function",
         "function": {
@@ -209,7 +250,6 @@ def function_to_json(func) -> dict:
             },
         },
     }
-
 
 def write_local_tool(api_dir_path: str, tool_definition: dict, tool_func: str, exec_sh=None):
     """

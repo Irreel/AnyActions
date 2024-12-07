@@ -17,16 +17,21 @@ def test_get():
     status, response = client.get("download", load_data("test-files/test-retrieve-ok.json"))
     assert status == RequestStatus.OK, f"Expected status OK, got {status}"
 
-def test_save():
+# def test_save():
+#     client = Client(os.environ["AWS_GATEWAY_BASE_URL"], os.environ["AWS_GATEWAY_API_KEY"])
+#     status = client.post("upload", load_data("test-files/test-callback-ok-deprecated.json"))
+#     assert status == RequestStatus.OK, f"Expected status OK, got {status}"
+    
+def test_callback():
     client = Client(os.environ["AWS_GATEWAY_BASE_URL"], os.environ["AWS_GATEWAY_API_KEY"])
-    status = client.post("upload", load_data("test-files/test-callback-ok.json"))
+    status = client.post("callback", load_data("test-files/test-callback-ok.json"))
     assert status == RequestStatus.OK, f"Expected status OK, got {status}"
 
 def main():
     setup()
     test_get()
-    test_save()
-    
+    # test_save()
+    test_callback()
 
 if __name__ == '__main__':
     main()
