@@ -137,3 +137,4 @@ def check_dependencies(tool_list: List):
     Check if the tool_list has all the dependencies
     """
     # TODO: request to the server?
+    raise NotImplementedError

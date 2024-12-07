@@ -1,7 +1,7 @@
 import os
 import json
 import inspect
-from typing import List
+from typing import List, Callable, Any
 from .exception.anyactions_exceptions import *
 
 def create_local_tools_dir(api_dir_path, observer=False):
@@ -34,6 +34,40 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     
     # raise NotImplementedError("Not implemented")
     pass
+
+def check_tool_decorator(tool_function: Callable[..., Any]) -> dict:
+    """
+    Check if a tool function has specific decorators.
+    
+    Args:
+        tool_function: The function to check for decorators
+        
+    Returns:
+        dict: Dictionary containing decorator information
+        {
+            'has_decorators': bool,
+            'decorators': list of decorator names,
+            'original_function': name of the original function
+        }
+    """
+    result = {
+        'has_decorators': False,
+        'decorators': [],
+        'original_function': tool_function.__name__
+    }
+    
+    if hasattr(tool_function, '__wrapped__'):
+        result['has_decorators'] = True
+        current_func = tool_function
+        
+        # Walk through all decorators
+        while hasattr(current_func, '__wrapped__'):
+            result['decorators'].append(current_func.__name__)
+            current_func = current_func.__wrapped__
+            
+        result['original_function'] = current_func.__name__
+        
+    return result    
 
 def get_all_local_tool_names(api_dir_path: str, observer=False) -> List[str]:
     """Load names of existing tools from local directory"""

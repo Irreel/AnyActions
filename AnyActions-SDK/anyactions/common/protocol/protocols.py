@@ -1,3 +1,9 @@
+"""Protocol for action execution status"""
+ACTION_SUCCESS = b"success"
+ACTION_FAILURE = b"failure"
+
+
+"""Protocol for talking to the AnyActions server"""
 class GetApiByProviderActionRequestBuilder:
     """
     Builder for GetApiByProviderActionRequest

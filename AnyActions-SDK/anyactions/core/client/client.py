@@ -1,4 +1,5 @@
 import requests
+from anyactions.common.constants import SERVER_BASE_URL
 from anyactions.common.exception.anyactions_exceptions import AWSGatewayException
 from anyactions.core.client.request_status import RequestStatus
 
@@ -6,7 +7,7 @@ class Client:
     """
     Client to interact with the AnyActions API, deployed on AWS API Gateway.
     """
-    def __init__(self, base_url: str, api_key: str):
+    def __init__(self, base_url: str = SERVER_BASE_URL, api_key: str = None):
         """
         Constructor for the Client class.
 

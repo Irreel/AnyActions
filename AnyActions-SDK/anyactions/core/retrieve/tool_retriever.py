@@ -1,7 +1,7 @@
 import json
+from anyactions.common import *
 from anyactions.core.client.client import Client
 from anyactions.core.client.request_status import RequestStatus
-from anyactions.common.protocol.protocols import GetApiByProviderActionRequestBuilder
 
 """
 Interact with the API to retrieve the tool and post-process the response
@@ -21,12 +21,17 @@ class Retriever:
         """
         if self.observer:
             print(f"Downloading {action_name}")
-        status, response = self.client.get("download", query=self.get_request(action_name))
+        status, response = self.client.get(DOWNLOAD_EP, query=self.get_request(action_name))
         if (status == RequestStatus.OK):
             return self.parse_response(response)
         elif (status == RequestStatus.NOT_FOUND):
-            #TODO: Fall back to generating with LLM
-            raise NotImplementedError
+            if_gen = input(f"Not found [{action_name}] \nMake sure you have the correct action name. Enter 'y' to wild search this API in the internet:")
+            if if_gen == "y":
+                # TODO: Fall back to generating with LLM
+                # self.client.post("generate", query=self.get_request(action_name))
+                raise NotImplementedError
+            else:
+                raise Exception(f"Tool {action_name} not found")
         elif status == RequestStatus.FORBIDDEN:
             raise Exception(f"Forbidden: Please check your API key for AnyActions")
         else:

@@ -1,6 +1,6 @@
-from .exception.anyactions_exceptions import *
 from .protocol.protocols import *
 from .protocol.responses import ToolDefinition
+from .exception.anyactions_exceptions import *
 
 __all__ = [
     'AnyActionsException',
@@ -11,3 +11,9 @@ __all__ = [
     'SaveApiRequestBuilder',
     'ToolDefinition',
 ]
+
+def download():
+    raise Exception("WHERRE ARE YOU???")
+
+def upload():
+    raise Exception("WHERRE ARE YOU???")

@@ -11,13 +11,12 @@ from anyactions.core.abstract import *
 from anyactions.core.retrieve import Retriever
 from anyactions.core.client import Client, RequestStatus
 
-from .utils import create_inter_api_key
-
-
-# TODO: replace this mock module
-# from .db_tmp import db_index, db, tool_name_to_index
+from anyactions.core.procedure.act import Actor
 
 from anyactions.common.constants import LOCAL_ENV_PATH
+
+# TODO: Replace this
+from .utils import create_inter_api_key
 
 class ActionHub:
     
@@ -263,8 +262,11 @@ class ActionHub:
         
         return True, provider_name, action_name, inter_api_key
            
+    def update_validated_action(self, action_name: str):
+        raise NotImplementedError
+
     @deprecated
-    def _act_deprecated(self, api_name, input_params, endpoint_cache=True):
+    def _act_mock(self, api_name, input_params, endpoint_cache=True):
 
         assert isinstance(api_name, str)
         
@@ -335,6 +337,7 @@ class ActionHub:
         
         return data, output_schema
     
+    @deprecated
     def _act_local(self, action_name, input_params: dict, endpoint_cache=True):
         """Execute a tool function from a local Python file.
         
@@ -367,6 +370,29 @@ class ActionHub:
             # Get the main function (assumed to be named the same as the action_name)
             tool_function = getattr(module, action_name)
             
+            # # Read the file content
+            # with open(module_path, 'r') as file:
+            #     code = file.read()
+                
+            # # Create a new namespace that includes the current globals
+            # namespace = globals().copy()
+            
+            # # Execute the code in this namespace
+            # exec(code, namespace)
+            # tool_function = namespace[action_name]
+            
+            # Print decorator information
+            if hasattr(tool_function, '__wrapped__'):
+                print("Decorators found:")
+                current_func = tool_function
+                while hasattr(current_func, '__wrapped__'):
+                    print(f"- {current_func.__name__}")
+                    current_func = current_func.__wrapped__
+                print(f"Original function: {current_func.__name__}")
+            else:
+                print("No decorators found")
+            raise Exception("Stop here")
+            
             # Get the function signature parameters
             import inspect
             params = inspect.signature(tool_function).parameters
@@ -397,129 +423,8 @@ class ActionHub:
             raise Exception(f"Error executing tool {action_name}: {e}")
 
     def act(self, response_object):
-        """Process and execute tool/function calls from LLM response objects.
         
-        This method intended to handle different types of response objects from various LLM providers
-        (like OpenAI and Anthropic) and executes the requested tool/function calls.
-        # TODO: Only support OpenAI for now
-        
-        Args:
-            response_object (Union[dict, list]): The response object from an LLM. Supported types:
-                - openai.types.chat.chat_completion.ChatCompletion
-                - anthropic.types.message.Message
-                - List containing either of the above
-            observer (bool, optional): If True, returns the tool being called and its arguments
-                instead of executing the call. Defaults to False.
-                
-        Returns:
-            Tuple[Any, Optional[dict]]: A tuple containing:
-                - response: The result from executing the tool/function call
-                - output_schema: Schema definition for the response format, or None if no schema exists
-                
-        Raises:
-            Exception: If the response object type is unsupported or if there are errors in
-                tool execution or API responses
-                
-        Examples:
-            >>> hub = ActionHub()
-            >>> response = llm.chat(...)  # Get response from LLM
-            >>> result, schema = hub.act(response)
-        """
-        
-        # TODO: Finish the following implementation for multiple tool calls
-        # if isinstance(response_object, list):
-        #     if len(response_object) == 1:
-        #         response_object = response_object[0]
-        #     else:
-        #         # This is useful for LLM responses which include a tool usage request with other text response 
-        #         for entry in response_object:
-        #             # Assume there is only one tool usage request in model responses
-        #             try:
-        #                 response, output_schema = self.act(entry)
-        #                 # break once it found the tool usage request
-        #                 break
-        #             except:
-        #                 pass
-        #         return response, output_schema
-        # else:
-        
-        # TODO: find a better way to identify the object without installing 3rd party package. 
-        # (Solution 1: some packages re-write these object definition in their library, like langchain, litellm etc.)
-        
-        response = dict(response_object)
-            
-        # Check if it is ChatCompletion object in openai
-        if ('choices' in response and
-            isinstance(response['choices'], list) and
-            len(response['choices']) > 0 and
-            'message' in dict(response['choices'][0])):
-            
-            # Find the message with tool calls
-            for choice in response['choices']:
-                message = dict(dict(choice)['message'])
-                if message.get('tool_calls', None) is not None:
-                    for tool_call in message['tool_calls']:
-                        tool_call_dict = dict(tool_call)
-                        if tool_call_dict.get('type') == 'function':
-                            function_name = dict(tool_call_dict['function'])['name']
-                            function_args = json.loads(dict(tool_call_dict['function'])['arguments'])
-                            if self.observer:
-                                print(f"Function to call: {function_name}")
-                                print(f"Arguments: {function_args}")
-                            break
-        
-        # if it is ChatCompletionMessage object from OpenAI
-        # ...
-        
-        # if it is ChatCompletionMessageToolCall object from OpenAI
-        # ...
-        
-        # # Check if it is a ToolUseBlock-like object in claude 
-        # elif (isinstance(response_object, dict) and
-        #     'name' in response_object and
-        #     'input' in response_object):
-        #         function_name = response_object['name']
-        #         function_args = response_object['input']
-      
-        # # if it is <class 'anthropic.types.message.Message'> in claude
-        # elif (isinstance(response_object, dict) and
-        #     'content' in response_object and
-        #     'stop_reason' in response_object):
-            
-        #     content = response_object['content']
-            
-        #     if response_object['stop_reason'] == 'tool_use':
-        #         for item in content:
-        #             # TODO: find a better way to identify these object
-        #             item = dict(item)
-        #             if item['type'] == 'text':
-        #                 pass
-        #             elif item['type'] == 'tool_use':
-        #                 function_name = item['name']
-        #                 function_args = item['input']
-                        
-        #                 print(f"  Tool name: {item['name']}")
-        #                 print(f"  Tool input: {json.dumps(item['input'], indent=2)}")
-        #     else:
-        #         # TODO: testing
-        #         print(f"\n[No tool calling] Model response: {content}\n")
-                
-        #         return content, None
-            
-        else:
-            raise Exception("Unsupported response object type")
-        
-        if 'function_name' not in locals():
-            # If there are no tool calls, just print the content
-            if self.observer:
-                print("\nNo tool calling object found in the model response\n")
-            return response_object
-        
-        #######
-        # Run the local action function
-        #######
-        
-        response = self._act_local(function_name, function_args)
+        response = Actor(self.api_dir_path, self.client, self.observer)(response_object)
         
         return response
         
