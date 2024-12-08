@@ -19,14 +19,32 @@ https://github.com/openai/openai-cookbook/blob/main/examples/third_party/Web_sea
 
 
 # Upload to AWS Lambda Layer
+
+Openai Lambda Layer not support python 3.11 yet.
+```bash
+# For macOS
+brew install python@3.10
+```
+
 Create new venv
 ```bash
-python3.11 -m venv create_layer
+python3.10 -m venv create_layer
 source create_layer/bin/activate
 pip install -r requirements.txt
 ```
 
+<!-- ```bash
+pip install \
+--platform manylinux2014_aarch64 \
+--target=package \
+--implementation cp \
+--python-version 3.11 \
+--only-binary=:all: --upgrade \
+-r requirements.txt
+``` -->
+
 Create zip file
 ```bash
+rm layer_content.zip
 sh package.sh
 ```
