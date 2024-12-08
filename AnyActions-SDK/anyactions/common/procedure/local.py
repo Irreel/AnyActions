@@ -139,11 +139,29 @@ def check_local_tool_exists(api_dir_path, tool_name, observer=False):
 def check_local_api_key_exists(api_dir_path, tool_name, observer=False):
     """Check if api key exists"""
     api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
-    try:
-        assert os.path.exists(api_key_path)
-        return True
-    except AssertionError:
-        return False
+    if not os.path.exists(api_key_path):
+        return False   
+    with open(api_key_path, 'r') as f:
+        content = f.read().strip()    
+    return bool(content)
+
+def check_local_tool_auth_method(api_dir_path, tool_name, observer=False):
+    """Currently, check if the tool needs api key
+    
+    Returns:
+        int: 0 if no api_key parameter
+             1 if api_key is required
+             2 if api_key is optional
+    """
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
+    tool_func = get_tool_callable(tool_name, tool_path)
+    signature = inspect.signature(tool_func)
+    
+    if "api_key" not in signature.parameters:
+        return 0
+        
+    api_key_param = signature.parameters["api_key"]
+    return 1 if api_key_param.default == inspect._empty else 2
     
 def check_tool_decorator(tool_function: Callable[..., Any], target_decorator: str, observer=False) -> dict:
     """
@@ -209,6 +227,28 @@ def get_local_tool_definition(api_dir_path: str, tool_name: str, observer=False)
     if observer:
         print(f"Local tool definition loaded: {tool_definition}")
     return tool_definition
+
+def get_local_tool_function_params(api_dir_path: str, tool_name: str, observer=False):
+    """Get the parameters of a local tool function"""
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
+    try:
+        # Get the function using get_tool_callable
+        tool_func = get_tool_callable(tool_name, tool_path)
+        # Get the function signature
+        signature = inspect.signature(tool_func)
+        # Convert parameters to dictionary
+        params = {
+            name: {
+                'annotation': str(param.annotation) if param.annotation != inspect._empty else None,
+                'default': param.default if param.default != inspect._empty else None
+            }
+            for name, param in signature.parameters.items()
+        }
+        if observer:
+            print(f"Function parameters for {tool_name}: {params}")
+        return params
+    except Exception as e:
+        raise LocalToolException(f"Failed to get function parameters for {tool_name}: {e}")
 
 def get_local_api_key(api_dir_path: str, tool_name: str, observer=False):
     """Get the api key for a local tool"""

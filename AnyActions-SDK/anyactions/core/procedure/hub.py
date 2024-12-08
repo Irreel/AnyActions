@@ -151,15 +151,26 @@ class ActionHub:
         try:
             write_local_tool(self.api_dir_path, tool_def, func_body)
             
-            if len(instruction) > 0:
-                print(f"You can set up the API key here: {instruction}\n")
-                api_key = getpass("Paste your API key here:")
-                if api_key:
-                    # TODO: check if the api_key is already existed
-                    with open(os.path.join(self.api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY"), 'w+') as f:
-                        f.write(f"{api_key}")
+            auth_flg = check_local_tool_auth_method(self.api_dir_path, tool_name)
+            
+            if auth_flg:
+                # If api key is required or optional
+                if not check_local_api_key_exists(self.api_dir_path, tool_name):
+                    print(f"You can set up the API key here: {instruction}\n")
+                    api_key = getpass("Paste your API key here:")
+                    if api_key:
+                        with open(os.path.join(self.api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY"), 'w+') as f:
+                            f.write(f"{api_key}")
+                    else:
+                        if auth_flg == 2:
+                            print(f"API key is optional for {tool_name}. Continue without authentication.")
+                        elif auth_flg == 1:
+                            raise Exception("API key is required")
                 else:
-                    raise Exception("API key is required")
+                    # If the api key already exists, do nothing
+                    if self.observer:
+                        print(f"{tool_name} API key already found")
+                    pass
             
             if self.observer:
                 print(f"{tool_name}.py added")            
