@@ -260,10 +260,6 @@ class ActionHub:
                 raise ValueError(f"Failed to create {legal_api_name} key")  
         
         return True, provider_name, action_name, inter_api_key
-           
-    def validate_action(self, action_name: str):
-        
-        raise NotImplementedError
 
     @deprecated
     def _act_mock(self, api_name, input_params, endpoint_cache=True):
@@ -340,6 +336,7 @@ class ActionHub:
     def act(self, response_object):
         response = Actor(self.api_dir_path, self.client, self.observer)(response_object)
         return response
+
         
     def call(self, action_name, input_params):
         """This is for calling tool functions directly without model"""

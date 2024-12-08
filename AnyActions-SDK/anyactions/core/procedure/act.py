@@ -9,7 +9,7 @@ from anyactions.core.decorators import action, generated_action
 from anyactions.common import *
 from anyactions.common.constants import *
 from anyactions.common.protocol.protocols import ACTION_SUCCESS, ACTION_FAILURE
-from anyactions.common.procedure.local import get_local_api_key, check_tool_decorator, get_tool_callable
+from anyactions.common.procedure.local import get_local_api_key, check_tool_decorator, get_tool_callable, validate_local_tool
 
 class Actor:
     def __init__(self, api_dir_path: str, client = Client, observer=False):
@@ -184,7 +184,8 @@ class Actor:
                 # TODO: use MCP
                 response, status = tool_function(**input_params)
                 if status == ACTION_SUCCESS:
-                    self.callback(action_name, tool_function)
+                    self.callback(action_name, tool_function, self.observer)
+                    validate_local_tool(self.api_dir_path, action_name, self.observer)
                     return response
                 elif status == ACTION_FAILURE:
                     raise Exception(f"Error executing tool {module_path}: {response}")
@@ -200,12 +201,14 @@ class Actor:
         except Exception as e:
             raise Exception(f"Error executing tool {action_name}: {e}")
 
-    def callback(self, action_name: str, tool_function: Callable):
-        status, response = self.client.post(path=CALLBACK_EP, data=self.upload_request(action_name, tool_function))
-        return status, response
+    def callback(self, action_name: str, tool_function: Callable, observer=False):
+        response = self.client.post(path=CALLBACK_EP, data=self.upload_request(action_name, tool_function))
+        if observer:
+            print(f"Callback to {CALLBACK_EP} with action_name: {action_name}")
+        return response
     
     def upload_request(self, action_name: str, tool_function: Callable) -> dict:
-        builder = SaveApiRequestBuilder()
+        builder = CallbackApiRequestBuilder()
         builder.set_action(action_name)
         # builder.set_tool_function(tool_function)
         return builder.get()

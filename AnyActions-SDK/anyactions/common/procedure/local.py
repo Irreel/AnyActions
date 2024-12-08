@@ -179,9 +179,6 @@ def check_tool_decorator(tool_function: Callable[..., Any], target_decorator: st
             current_func = current_func.__wrapped__
             
         result['original_function'] = current_func.__name__
-    
-    if observer:
-        print(result['decorators'])
         
     if target_decorator in result['decorators']:
         return True
@@ -302,7 +299,6 @@ def read_tool_decorators(api_dir_path: str, tool_name: str) -> List[str]:
             
     return decorators  
 
-
 def function_to_json(func: Callable, skip_api_key=True) -> dict:
     """
     https://github.com/openai/swarm?tab=readme-ov-file#examples
@@ -366,3 +362,45 @@ def function_to_json(func: Callable, skip_api_key=True) -> dict:
             },
         },
     }
+
+######
+# Update local tool
+######    
+def validate_local_tool(api_dir_path: str, tool_name: str, observer=False):
+    """Validate the usable status of a tool"""
+    try:
+        tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
+        with open(tool_path, 'r', encoding='utf-8') as f:
+            file = f.read()
+        
+        # Split content into lines to handle updates
+        lines = file.splitlines()
+        updated_lines = []
+        
+        # Use enumerate to get both index and line
+        for i, line in enumerate(lines):
+            # Handle anyactions import
+            if line.startswith('from anyactions import'):
+                parts = line.split('import')
+                imports = parts[1].replace('generated_action', 'action')
+                updated_line = f"{parts[0]}import{imports}"
+                updated_lines.append(updated_line)
+                
+            # Handle decorator replacement
+            elif line.strip() == '@generated_action' and i + 1 < len(lines) and lines[i + 1].strip().startswith('def '):
+                updated_lines.append('@action')
+            else:
+                updated_lines.append(line)
+                
+        updated_file = '\n'.join(updated_lines)
+        
+        # Write back the updated content
+        with open(tool_path, 'w', encoding='utf-8') as f:
+            f.write(updated_file)
+            
+        return True
+        
+    except Exception as e:
+        if observer:
+            print(f"Failed to validate tool {tool_name}: {e}")
+        return False
