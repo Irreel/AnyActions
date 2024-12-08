@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 from typing import List, Dict, Union, Optional
 
 from anyactions.common import *
-from anyactions.common.local import *
-from anyactions.core.abstract import *
+from anyactions.core.decorators import *
+from anyactions.common.procedure.local import *
 from anyactions.core.retrieve import Retriever
 from anyactions.core.client import Client, RequestStatus
 
@@ -167,8 +167,8 @@ class ActionHub:
         
         except Exception as e:
             raise Exception(f"Failed to set up {tool_name} tool in local environment: {e}")
-    
-        
+      
+    @deprecated
     def verification(self, api_name):
         """_summary_
         TODO: Currently it keeps 3rd party API keys locally
@@ -261,7 +261,8 @@ class ActionHub:
         
         return True, provider_name, action_name, inter_api_key
            
-    def update_validated_action(self, action_name: str):
+    def validate_action(self, action_name: str):
+        
         raise NotImplementedError
 
     @deprecated
@@ -337,17 +338,12 @@ class ActionHub:
         return data, output_schema
 
     def act(self, response_object):
-        
         response = Actor(self.api_dir_path, self.client, self.observer)(response_object)
-        
         return response
         
-    
     def call(self, action_name, input_params):
         """This is for calling tool functions directly without model"""
-        
         # TODO
-        
         raise NotImplementedError
     
     

@@ -4,7 +4,7 @@ ACTION_FAILURE = b"failure"
 
 
 """Protocol for talking to the AnyActions server"""
-from anyactions.common.local import function_to_json
+from anyactions.common.procedure.local import function_to_json
 from anyactions.common.db.validate import validate_tool_name
 
 from typing import Callable, Literal

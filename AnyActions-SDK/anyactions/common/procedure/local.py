@@ -3,8 +3,80 @@ import json
 import inspect
 import importlib.util
 from typing import List, Callable, Any
-from .exception.anyactions_exceptions import *
+from anyactions.common.exception.anyactions_exceptions import *
 
+def write_local_tool(api_dir_path: str, tool_definition: dict, tool_func: str, exec_sh=None) -> None:
+    """
+    Write tool function to local environment. Might execute shell commands in the future.
+
+    Args:
+        api_dir_path (str): Path to the directory storing API configurations and tools.
+        tool_definition (dict): Tool definition in OpenAI format.
+        tool_func (str): Function code as a string.
+        exec_sh (str, optional): Shell commands to execute. Defaults to None.
+    """
+    
+    tool_name = tool_definition.get("name") or tool_definition.get("function").get("name") # Anthropic schema Or OpenAI schema
+    tool_file_path = os.path.join(api_dir_path, f"{tool_name}.py")
+
+    try:
+        with open(tool_file_path, 'w', encoding='utf-8') as f:
+            ## if Claude
+            # # Prepare function parameters from input_schema
+            # input_schema = tool_definition.get("input_schema", {})
+            # properties = input_schema.get("properties", {})
+            # required = input_schema.get("required", [])
+            
+            ## if OpenAI
+            # input_schema = tool_definition.get("function", {}).get("parameters", {})
+            # properties = input_schema.get("properties", {})
+            # required = input_schema.get("required", [])
+            # param_list = []
+            # for param in properties.items():
+            #     param_name = param.key
+            #     param_attrs = param.value["type"]
+            #     if param_name in required:
+            #         param_list.append(f"{param_name}")
+            #     else:
+            #         default = param_attrs.get("default", "None")
+            #         param_list.append(f"{param_name}={default}")
+            # params = ", ".join(param_list)
+            
+            # Write function body with proper indentation and line breaks
+            f.write(tool_func)
+
+        if exec_sh:
+            # Execute any shell commands if provided
+            subprocess.run(exec_sh, shell=True, check=True)
+            
+    except Exception as e:
+        raise LocalToolException(f"Failed to write tool to {tool_file_path}: {e}")
+
+def read_local_tool(api_dir_path: str, tool_name: str) -> dict:
+    """Read a local tool from local directory"""
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
+    
+    with open(tool_path, 'r', encoding='utf-8') as f:
+        return f.read()
+    
+    tool_definition = read_tool_definition(api_dir_path, tool_name)
+    try:
+        tool_func = get_tool_callable(tool_name, tool_path)
+        signature = inspect.signature(tool_func)
+    except ValueError as e:
+        raise ValueError(
+            f"Failed to get signature for function {func.__name__}: {str(e)}"
+        )
+    
+    return {
+        "tool_definition": tool_definition,
+        "tool_func": tool_func,
+        "status": None,
+    }
+
+######
+# Local tool directory
+######    
 def create_local_tools_dir(api_dir_path, observer=False):
     """Create local directory for storing tools"""
     if not os.path.exists(api_dir_path):
@@ -19,23 +91,25 @@ def create_local_tools_dir(api_dir_path, observer=False):
         if observer:
             print(f"Local tools directory already exists: {api_dir_path}")
         return False
-    
+
+######
+# Validation for local tool calling
+######    
 def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     """Check if local tools directory exists and with api keys"""
-    assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
-    
-    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
-    assert os.path.exists(tool_path), LocalToolException(f"Local tool does not exist: {tool_path}. Check if the tool is registered in ActionHub.")
+    assert check_local_tools_dir_exists(api_dir_path)
+    assert check_local_tool_exists(api_dir_path, tool_name)
     
     # Check if tool definition is valid
-    tool_def = parse_tool_definition(api_dir_path, tool_name)
+    tool_def = read_tool_definition(api_dir_path, tool_name)
     
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
     # Check tool name consistency
-    assert tool_def.get("function", {}).get("name") == tool_name, LocalToolException(f"Tool name inconsistency: Check if tool name in tool_definition is consistent with the tool name {tool_def.get('function', {}).get('name')} VS {tool_name}")
+    assert tool_def.get("function", {}).get("name") == tool_name, LocalToolException(f"Tool name inconsistency: Check {tool_path} if tool name in tool_definition is consistent with the tool name {tool_def.get('function', {}).get('name')} VS file name{tool_name}")
     
     # Check if api key is needed
     try:
-        func = load_callable(tool_name, tool_path)
+        func = get_tool_callable(tool_name, tool_path)
         signature = inspect.signature(func)
     except ValueError as e:
         raise ValueError(
@@ -45,15 +119,25 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     if "api_key" in signature.parameters:
         api_key_param = signature.parameters["api_key"]
         if api_key_param.default == inspect._empty:
-            assert check_local_api_key(api_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key.")
+            assert check_local_api_key_exists(api_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key.")
     
-    # Check if dependencies are satisfied
+    # TODO:Check if dependencies are satisfied
     
-    # raise NotImplementedError("Not implemented")
     return True
 
-def check_local_api_key(api_dir_path, tool_name, observer=False):
-    """Check if api key is needed and exists"""
+def check_local_tools_dir_exists(api_dir_path: str, observer=False):
+    """Check if local tools directory exists"""
+    assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
+    return True
+
+def check_local_tool_exists(api_dir_path, tool_name, observer=False):
+    """Check if local tool exists"""
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
+    assert os.path.exists(tool_path), LocalToolException(f"Local tool does not exist: {tool_path}. Check if the tool is registered in ActionHub.")
+    return True
+
+def check_local_api_key_exists(api_dir_path, tool_name, observer=False):
+    """Check if api key exists"""
     api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
     try:
         assert os.path.exists(api_key_path)
@@ -61,7 +145,7 @@ def check_local_api_key(api_dir_path, tool_name, observer=False):
     except AssertionError:
         return False
     
-def check_tool_decorator(tool_function: Callable[..., Any]) -> dict:
+def check_tool_decorator(tool_function: Callable[..., Any], target_decorator: str, observer=False) -> dict:
     """
     Check if a tool function has specific decorators.
     
@@ -76,11 +160,14 @@ def check_tool_decorator(tool_function: Callable[..., Any]) -> dict:
             'original_function': name of the original function
         }
     """
+    assert target_decorator in ['action', 'generated_action']
+    
     result = {
         'has_decorators': False,
         'decorators': [],
         'original_function': tool_function.__name__
     }
+    
     
     if hasattr(tool_function, '__wrapped__'):
         result['has_decorators'] = True
@@ -92,9 +179,18 @@ def check_tool_decorator(tool_function: Callable[..., Any]) -> dict:
             current_func = current_func.__wrapped__
             
         result['original_function'] = current_func.__name__
+    
+    if observer:
+        print(result['decorators'])
         
-    return result    
+    if target_decorator in result['decorators']:
+        return True
+    else:
+        return False
 
+######
+# Read/Get local tools list
+######    
 def get_all_local_tool_names(api_dir_path: str, observer=False) -> List[str]:
     """Load names of existing tools from local directory"""
     assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
@@ -112,7 +208,7 @@ def get_local_tool_definition(api_dir_path: str, tool_name: str, observer=False)
     """Load a single local tool from local directory"""
     check_local_tool_legit(api_dir_path, tool_name, observer)
     
-    tool_definition = parse_tool_definition(api_dir_path, tool_name)
+    tool_definition = read_tool_definition(api_dir_path, tool_name)
     if observer:
         print(f"Local tool definition loaded: {tool_definition}")
     return tool_definition
@@ -126,8 +222,7 @@ def get_local_api_key(api_dir_path: str, tool_name: str, observer=False):
         api_key = f.read()
     return api_key
     
-def load_callable(action_name: str, file_path: str) -> Callable:
-    """Load a local function from a file"""
+def get_tool_callable(action_name: str, file_path: str) -> Callable:
     try:
         # Load the module
         spec = importlib.util.spec_from_file_location(action_name, file_path)
@@ -138,20 +233,23 @@ def load_callable(action_name: str, file_path: str) -> Callable:
         return tool_function
     except Exception as e:
         raise LocalToolException(f"Failed to load function {action_name} from {file_path}: {e}")
-    
-def parse_tool_definition(local_env_path: str, tool_name: str) -> dict:
+
+######
+# Read other tool attributes. Input is tool name and tool path string
+######    
+def read_tool_definition(api_dir_path: str, tool_name: str) -> dict:
     """
-    Parses the _tool_definition_ from the specified Python file.
+    Parses the _tool_definition_ from the specified Python file based on AnyActions schema.
 
     Args:
-        local_env_path (Path): The path to the local environment directory.
+        api_dir_path (Path): The path to the local environment directory.
         tool_name (str): The name of the tool file (e.g., 'tool_function.py').
 
     Returns:
         dict: The parsed tool definition.
     """
     
-    tool_path = os.path.join(local_env_path, f"{tool_name}.py")
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
     
     try:
         with open(tool_path, 'r', encoding='utf-8') as file:
@@ -183,9 +281,27 @@ def parse_tool_definition(local_env_path: str, tool_name: str) -> dict:
         tool_definition = json.loads(json_str)
     except Exception as e:
         print(f"Failed to parse tool definition: {e}\nParse to json directly")
-        return function_to_json(load_callable(tool_name, tool_path))
+        return function_to_json(get_tool_callable(tool_name, tool_path))
 
     return tool_definition
+
+def read_tool_decorators(api_dir_path: str, tool_name: str) -> List[str]:
+    """Read the decorators of a tool"""
+    tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
+    
+    tool_func = get_tool_callable(tool_name, tool_path)
+    
+    decorators = []
+    if hasattr(tool_func, '__wrapped__'):
+        current_func = tool_func
+
+        # Walk through all decorators
+        while hasattr(current_func, '__wrapped__'):
+            decorators.append(current_func.__name__)
+            current_func = current_func.__wrapped__
+            
+    return decorators  
+
 
 def function_to_json(func: Callable, skip_api_key=True) -> dict:
     """
@@ -250,50 +366,3 @@ def function_to_json(func: Callable, skip_api_key=True) -> dict:
             },
         },
     }
-
-def write_local_tool(api_dir_path: str, tool_definition: dict, tool_func: str, exec_sh=None):
-    """
-    Write tool function to local environment. Might execute shell commands in the future.
-
-    Args:
-        api_dir_path (str): Path to the directory storing API configurations and tools.
-        tool_definition (dict): Tool definition in OpenAI format.
-        tool_func (str): Function code as a string.
-        exec_sh (str, optional): Shell commands to execute. Defaults to None.
-    """
-    
-    tool_name = tool_definition.get("name") or tool_definition.get("function").get("name") # Anthropic schema Or OpenAI schema
-    tool_file_path = os.path.join(api_dir_path, f"{tool_name}.py")
-
-    try:
-        with open(tool_file_path, 'w', encoding='utf-8') as f:
-            ## if Claude
-            # # Prepare function parameters from input_schema
-            # input_schema = tool_definition.get("input_schema", {})
-            # properties = input_schema.get("properties", {})
-            # required = input_schema.get("required", [])
-            
-            ## if OpenAI
-            # input_schema = tool_definition.get("function", {}).get("parameters", {})
-            # properties = input_schema.get("properties", {})
-            # required = input_schema.get("required", [])
-            # param_list = []
-            # for param in properties.items():
-            #     param_name = param.key
-            #     param_attrs = param.value["type"]
-            #     if param_name in required:
-            #         param_list.append(f"{param_name}")
-            #     else:
-            #         default = param_attrs.get("default", "None")
-            #         param_list.append(f"{param_name}={default}")
-            # params = ", ".join(param_list)
-            
-            # Write function body with proper indentation and line breaks
-            f.write(tool_func)
-
-        if exec_sh:
-            # Execute any shell commands if provided
-            subprocess.run(exec_sh, shell=True, check=True)
-            
-    except Exception as e:
-        raise LocalToolException(f"Failed to write tool to {tool_file_path}: {e}")

@@ -4,12 +4,12 @@ import inspect
 from typing import Any, Optional, Union, Tuple, Callable
 
 from anyactions.core.client import Client
-from anyactions.core.abstract import action, generated_action
+from anyactions.core.decorators import action, generated_action
 
 from anyactions.common import *
 from anyactions.common.constants import *
-from anyactions.common.local import get_local_api_key, check_tool_decorator, load_callable
 from anyactions.common.protocol.protocols import ACTION_SUCCESS, ACTION_FAILURE
+from anyactions.common.procedure.local import get_local_api_key, check_tool_decorator, get_tool_callable
 
 class Actor:
     def __init__(self, api_dir_path: str, client = Client, observer=False):
@@ -166,7 +166,7 @@ class Actor:
             assert os.path.exists(module_path), LocalToolException(f"Tool {action_name} not found in {module_path}. Please check if the tool function file exists.")
             
             # Load the module
-            tool_function = load_callable(action_name, module_path)
+            tool_function = get_tool_callable(action_name, module_path)
             
             # Get the function signature parameters
             params = inspect.signature(tool_function).parameters
@@ -176,8 +176,8 @@ class Actor:
                 if 'api_key' not in input_params:
                     api_key = get_local_api_key(self.api_dir_path, action_name)
                     input_params['api_key'] = api_key
-
-            if 'generated_action' in check_tool_decorator(tool_function)['decorators']:
+            
+            if check_tool_decorator(tool_function, 'generated_action', self.observer):
                 # Get the output schema if it exists in the module
                 # output_schema = getattr(module, 'output_schema', None)
                 
