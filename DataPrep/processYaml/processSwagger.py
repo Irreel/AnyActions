@@ -1,4 +1,4 @@
-def process_swagger_yaml(yaml_content):
+def endpoint_from_swagger_yaml(yaml_content):
     """
     Process Swagger YAML content and extract API endpoints information.
     

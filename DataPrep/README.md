@@ -9,9 +9,9 @@ Exploration on generating API yaml from wild search is at `genAPIByByob.ipynb`
 
 # Explained
 
-For openapi.yaml, it has explicit information about operationId, which is the name of the API endpoint. Use the function `process_openapi_yaml` to extract these information.
+For openapi.yaml, it has explicit information about operationId, which is the name of the API endpoint. Use the function `endpoint_from_openapi_yaml` to extract these information.
 
-For swagger.yaml, the name of the API endpoint is inconsistent. It is recommended to convert swagger to openapi format first, and then use the function process_openapi_yaml to extract the API information.
+For swagger.yaml, the name of the API endpoint is inconsistent. It is recommended to convert swagger to openapi format first, and then use the function endpoint_from_openapi_yaml to extract the API information.
 
 Reference:
 https://cookbook.openai.com/examples/third_party/web_search_with_google_api_bring_your_own_browser_tool

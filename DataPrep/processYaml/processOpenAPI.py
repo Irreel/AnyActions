@@ -1,9 +1,8 @@
 import yaml
 from jinja2 import Template
-import logging
-from prompts import genDscpFromYaml_withNoExec
+# import logging
 
-def process_openapi_yaml(yaml_content):
+def endpoint_from_openapi_yaml(yaml_content):
     """
     Process OpenAPI YAML content and extract API endpoints information.
     
@@ -21,6 +20,7 @@ def process_openapi_yaml(yaml_content):
     
     # Check if paths section exists
     if 'paths' not in yaml_content:
+        print("No paths found in the OpenAPI YAML content")
         return endpoints
         
     # Iterate through each path
@@ -44,6 +44,10 @@ def process_openapi_yaml(yaml_content):
     return endpoints
 
 
+def endpoint_from_openapi_json(yaml_content):
+    raise NotImplementedError("OpenAPI JSON is not supported yet")
+
+# Deprecated
 def generate_client_functions_openapi(spec):
 
     base_url = spec.get('servers', [{'url': '/'}])[0]['url']
@@ -90,27 +94,32 @@ def {{ details.get('operationId', method + '_' + path.replace('/', '_').strip('_
     return functions_code
 
 if __name__ == "__main__":
-    # Configure logging
-    logging.basicConfig(
-        filename='gen.log',
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
+    # # Configure logging
+    # logging.basicConfig(
+    #     filename='gen.log',
+    #     level=logging.INFO,
+    #     format='%(asctime)s - %(levelname)s - %(message)s'
+    # )
     
-    try:
-        with open('/Users/zhao/Documents/Startup/ProjActions/AnyActions/APIdb/sample/api.gov.uk/vehicle-enquiry/1.1.0/openapi.yaml', 'r') as f:
-            spec = yaml.safe_load(f)
+    # try:
+    #     with open('/Users/zhao/Documents/Startup/ProjActions/AnyActions/APIdb/sample/api.gov.uk/vehicle-enquiry/1.1.0/openapi.yaml', 'r') as f:
+    #         spec = yaml.safe_load(f)
             
-        code = generate_client_functions_openapi(spec)
+    #     code = generate_client_functions_openapi(spec)
         
-        res = process_openapi_yaml(spec)
-        print(res)
+    #     res = endpoint_from_openapi_yaml(spec)
+    #     print(res)
         
-        with open('client.py', 'w') as f:
-            f.write(code)
+    #     with open('client.py', 'w') as f:
+    #         f.write(code)
         
-        logging.info('Successfully generated base functions and wrote to base.py')
-    except Exception as e:
-        logging.error(f'Error processing OpenAPI YAML: {str(e)}')
+    #     logging.info('Successfully generated base functions and wrote to base.py')
+    # except Exception as e:
+    #     logging.error(f'Error processing OpenAPI YAML: {str(e)}')
+    
+    # Inspect one example
+    with open('../../APIdb/sample_todo/slack/openai/v1/openapi.yaml', 'r') as f:
+        yaml_content = yaml.safe_load(f)
+        print(yaml_content['paths'])
         
         

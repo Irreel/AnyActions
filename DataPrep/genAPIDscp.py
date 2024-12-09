@@ -5,8 +5,8 @@ import dotenv
 from openai import OpenAI
 from formats import *
 
-from processYaml.processOpenAPI import process_openapi_yaml
-from processYaml.processSwagger import process_swagger_yaml
+from processYaml.processOpenAPI import endpoint_from_openapi_yaml
+from processYaml.processSwagger import endpoint_from_swagger_yaml
 from prompts import *
 
 
@@ -135,9 +135,9 @@ if __name__ == "__main__":
                     print(f"Processing {yaml_path}")
                     yaml_content = yaml.safe_load(open(yaml_path, 'r'))
                     if file.startswith('openapi'):
-                        endpoints = process_openapi_yaml(yaml_content)
+                        endpoints = endpoint_from_openapi_yaml(yaml_content)
                     elif file.startswith('swagger'):
-                        endpoints = process_swagger_yaml(yaml_content)
+                        endpoints = endpoint_from_swagger_yaml(yaml_content)
                     else:
                         print(f"Unsupported type for now {str(file)}")
                         continue
