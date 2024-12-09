@@ -28,7 +28,11 @@ def process_openapi_yaml(yaml_content):
         
         # Iterate through each HTTP method for the path
         for method, method_data in path_data.items():
-            operation_id = method_data.get('operationId')
+            try:
+                operation_id = method_data.get('operationId')
+            except:
+                print(method_data)
+                continue
             
             endpoint_info = {
                 'name': operation_id,

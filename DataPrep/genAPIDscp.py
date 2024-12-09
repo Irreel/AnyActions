@@ -7,7 +7,7 @@ from formats import *
 
 from processYaml.processOpenAPI import process_openapi_yaml
 from processYaml.processSwagger import process_swagger_yaml
-import prompts
+from prompts import *
 
 
 """
@@ -27,7 +27,7 @@ def genDscpFromSearch(api_name: str, api_provider: str):
 
 def genDscpFromYaml(endpoint: dict, source_yaml_path: str):
     dotenv.load_dotenv()
-    client = OpenAI(api_key=os.getenv('OPENAI_KEY'))
+    client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
     source_yaml = yaml.safe_load(open(source_yaml_path, 'r'))
     prompt = genDscpFromYaml_withNoExec.replace('{source_yaml}', str(source_yaml)).replace('{target_endpoint}', str(endpoint))
@@ -37,7 +37,7 @@ def genDscpFromYaml(endpoint: dict, source_yaml_path: str):
             model="o1-mini-2024-09-12",
             # model="gpt-4o-2024-11-20",
             messages=[  
-                {"role": "user", "content": prompt + prompts.structuredResponse}
+                {"role": "user", "content": prompt + structuredResponse}
             ]
             )
         
@@ -125,7 +125,7 @@ def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
 
 if __name__ == "__main__":
     # Try generated from the sample yaml set
-    DATA_DIR = '../APIdb/sample'
+    DATA_DIR = '../APIdb/sample_todo'
     OUTPUT_DIR = './sample_output'
     for service_provider in os.listdir(DATA_DIR):
         for root, dirs, files in os.walk(DATA_DIR + '/' + service_provider):
@@ -144,8 +144,13 @@ if __name__ == "__main__":
                     for endpoint in endpoints:
                         r = genDscpFromYaml(endpoint, yaml_path)
                         
-                        if r.startswith('```json') and r.endswith('```'):
-                            r = r[7:-3].strip('\n')
+                        try:
+                            if r.startswith('```json') and r.endswith('```'):
+                                r = r[7:-3].strip('\n')
+                        except Exception as e:
+                            print(f"Error parsing response for {endpoint.get('name', 'unnamed')}: {e}")
+                            print(r)
+                            raise Exception
                         
                         try:
                             endpoint_name = json.loads(r).get('tool_definition', {}).get('function', {}).get('name', 'unnamed')
