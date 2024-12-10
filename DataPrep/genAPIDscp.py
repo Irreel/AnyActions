@@ -216,15 +216,23 @@ if __name__ == "__main__":
                         continue
                     
                     for endpoint, single_yaml in shortenOpenapiYaml(yaml_path, endpoint_extractor):
-                        r = genDscpFromYaml(endpoint, single_yaml)
-                        try:
-                            if r.startswith('```json') and r.endswith('```'):
-                                r = r[7:-3].strip('\n')
-                        except Exception as e:
-                            print(f"Error parsing response for {endpoint.get('name', 'unnamed')}: {e}")
-                            print(r)
-                            raise Exception
+                        max_retries = 3
+                        retry_count = 0
+                        while retry_count < max_retries:
+                            r = genDscpFromYaml(endpoint, single_yaml)
+                            try:
+                                if r.startswith('```json') and r.endswith('```'):
+                                    r = r[7:-3].strip('\n')
+                                break  # Success, exit the retry loop
+                            except Exception as e:
+                                retry_count += 1
+                                print(f"Error parsing response for {endpoint.get('name', 'unnamed')} (Attempt {retry_count}/{max_retries}): {e}")
+                                print(r)
+                                if retry_count == max_retries:
+                                    print(f"Failed to parse response after {max_retries} attempts")
+                                    print(endpoint)
                         
+                        # Check the format
                         try:
                             endpoint_name = json.loads(r).get('tool_definition', {}).get('function', {}).get('name', 'unnamed')
                         except Exception as e:
@@ -237,7 +245,7 @@ if __name__ == "__main__":
                         else:
                             print(f"Invalid response format for {endpoint_name}")
                             print(r)
-                            raise Exception
+                            continue
                         
                         output_path = os.path.join(OUTPUT_DIR, f"{endpoint_name}.json")
                         with open(output_path, 'w') as f:

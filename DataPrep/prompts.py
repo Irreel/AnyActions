@@ -37,7 +37,7 @@ An example tool_definition looks like this:
 Attention:
 - For the tool function, if it asks for an authorization token, you need to add this token as the first argument `api_key` to the function.
 - Make sure the "name" in tool_definition is the same as the python function name in tool_function.
-- Service name may include symbols other than underscore, replace these symbols with a single underscore to make sure the name is valid in Python.
+- Get the service provider name from YAML to keep the integrity. Service name may include symbols other than underscore, replace these symbols with a single underscore to make sure the name is valid in Python.
 - Some information might be incomplete in the YAML file, so you need to infer from the endpoint description. If you are inferring a "name" in tool_definition, make sure the name is not duplicated with other endpoints in this YAML file.
 
 You are processing the following YAML file this turn:
