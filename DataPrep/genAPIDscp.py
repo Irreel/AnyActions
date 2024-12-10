@@ -71,7 +71,7 @@ def genDscpFromYaml(endpoint: dict, source_yaml: dict) -> str:
         # )
         # response = completion.choices[0].message.parsed
         
-        print(f"model response: {response}")
+        # print(f"model response: {response}")
         
         return response
         
