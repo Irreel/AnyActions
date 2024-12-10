@@ -53,13 +53,25 @@ def genDscpFromYaml(endpoint: dict, source_yaml: dict) -> str:
     try:
         completion = client.chat.completions.create(
             model="o1-mini-2024-09-12",
-            # model="gpt-4o-2024-11-20",
             messages=[  
-                {"role": "user", "content": prompt + structuredResponse}
-            ]
+                {"role": "user", "content": prompt + structuredResponse},
+                {"role": "assistant", "content": "```json\n{\n"}
+            ],
             )
         
         response = completion.choices[0].message.content
+        
+        # Somehow the pydantic model with dict doesn't work
+        # completion = client.beta.chat.completions.parse(
+        #     model="gpt-4o",
+        #     messages=[  
+        #         {"role": "user", "content": prompt + structuredResponse}
+        #     ],
+        #     response_format=
+        # )
+        # response = completion.choices[0].message.parsed
+        
+        print(f"model response: {response}")
         
         return response
         
@@ -94,7 +106,7 @@ def responseFormatCheck(response: str):
         return False
 
 
-def old_shortenOpenapiYaml(endpoint: dict, yaml_path: str):
+def shortenOpenapiYaml_single(endpoint: dict, yaml_path: str):
     """
     Shorten the yaml file to only include the target endpoint and context
     Only support OpenAPI since it searches by operationId
@@ -223,7 +235,24 @@ if __name__ == "__main__":
                             try:
                                 if r.startswith('```json') and r.endswith('```'):
                                     r = r[7:-3].strip('\n')
-                                break  # Success, exit the retry loop
+                                    
+                                # Check the format
+                                try:
+                                    endpoint_name = json.loads(r).get('tool_definition', {}).get('function', {}).get('name', 'unnamed')
+                                except Exception as e:
+                                    endpoint_name = endpoint.get('name', 'unnamed')
+                                    print(f"Error parsing response for {endpoint_name}: {e}")
+                                    print(r)
+                                    raise Exception
+                                
+                                assert responseFormatCheck(r), f"Invalid response format for {endpoint_name}"
+                                
+                                output_path = os.path.join(OUTPUT_DIR, f"{endpoint_name}.json")
+                                with open(output_path, 'w') as f:
+                                    f.write(r)
+                                    
+                                break
+                                         
                             except Exception as e:
                                 retry_count += 1
                                 print(f"Error parsing response for {endpoint.get('name', 'unnamed')} (Attempt {retry_count}/{max_retries}): {e}")
@@ -232,22 +261,5 @@ if __name__ == "__main__":
                                     print(f"Failed to parse response after {max_retries} attempts")
                                     print(endpoint)
                         
-                        # Check the format
-                        try:
-                            endpoint_name = json.loads(r).get('tool_definition', {}).get('function', {}).get('name', 'unnamed')
-                        except Exception as e:
-                            print(f"Error parsing response for {endpoint.get('name', 'unnamed')}: {e}")
-                            print(r)
-                            endpoint_name = endpoint.get('name', 'unnamed')
-                        
-                        if responseFormatCheck(r):
-                            print(f"Valid response format for {endpoint_name}")
-                        else:
-                            print(f"Invalid response format for {endpoint_name}")
-                            print(r)
-                            continue
-                        
-                        output_path = os.path.join(OUTPUT_DIR, f"{endpoint_name}.json")
-                        with open(output_path, 'w') as f:
-                            f.write(r)
+                    
                     

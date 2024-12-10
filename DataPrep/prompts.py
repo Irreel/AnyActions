@@ -52,7 +52,7 @@ genDscpFromYaml_withExec = NotImplementedError("Not implemented")
 
 structuredResponse = """
 Please provide your response in the following JSON format:
-
+```json
 {
     "instruction": "If the endpoint does not need API key for authentication, you must leave this field blank. Or provide a clear instruction with URL link for the user to set up the API authentication.",
     "tool_definition": {
@@ -73,6 +73,7 @@ Please provide your response in the following JSON format:
     },
     "tool_function": "def name_of_the_function(param1: type_of_param1_set_to_api_key_if_needed, param2: type_of_param2, ...):\n    # Your function implementation here\n    pass"
 }
+```
 """
 
 systemPrompt = """

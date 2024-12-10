@@ -43,3 +43,13 @@ class rawResponseWithNoExec(BaseModel):
     instruction: str
     tool_definition: ToolDefinition
     tool_function: str
+    
+# class rawResponseWithNoExec_test(BaseModel):
+#     instruction: str
+#     tool_definition: {
+#         "type": "function",
+#         "function": {
+#             Function
+#         }
+#     }
+#     tool_function: str
