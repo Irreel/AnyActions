@@ -3,9 +3,6 @@ Manage all the prompts we use here
 Some prompts are deprecated and will be cleaned up in the future
 """
 
-genDscpFromURL = """
-Here's the documentation: {doc_url} what does the API spec look like for {api_description}?
-"""
 
 genDscpFromYaml_withNoExec = """
 You are a data processor responsible for extracting relevant information from a provided YAML file. Your task is to generate Python tools to enable an AI agent to interact with a specific external API defined in the YAML file.
@@ -13,7 +10,7 @@ You are a data processor responsible for extracting relevant information from a 
 Instructions:
 For the specific endpoint, generate the following:
 
-instruction: A URL link to the related API registration page, if not available, a URL link to its technical documentation.
+instruction: Only fill this field if the endpoint requires an API key for authentication. A URL link to the related API registration page, if not available, a URL link to its technical documentation.
 tool_definition: A JSON object following OpenAI's tool calling format to describe the API endpoint. Make sure the function name starts with the service provider name. Do not include the api_key in the tool_definition.
 tool_function: A Python function to call the endpoint using the requests library. If api_key is required, add it as the first argument to the function.
 
@@ -37,9 +34,11 @@ An example tool_definition looks like this:
         }
     }
 
-For the tool function, if it asks for an authorization token, you need to add this token as the first argument to the function.
-
-Some information might be incomplete in the YAML file, so you need to infer from the endpoint description. If you are inferring a "name" in tool_definition, make sure the name is not duplicated with other endpoints in this YAML file.
+Attention:
+- For the tool function, if it asks for an authorization token, you need to add this token as the first argument `api_key` to the function.
+- Make sure the "name" in tool_definition is the same as the python function name in tool_function.
+- Service name may include symbols other than underscore, replace these symbols with a single underscore to make sure the name is valid in Python.
+- Some information might be incomplete in the YAML file, so you need to infer from the endpoint description. If you are inferring a "name" in tool_definition, make sure the name is not duplicated with other endpoints in this YAML file.
 
 You are processing the following YAML file this turn:
 {source_yaml}
@@ -50,10 +49,6 @@ Specify the endpoint you are processing based on the following information:
 
 genDscpFromYaml_withExec = NotImplementedError("Not implemented")
 
-
-getInstructionFromDscp = """
-Application website and application documentation link:
-"""
 
 structuredResponse = """
 Please provide your response in the following JSON format:
@@ -76,7 +71,7 @@ Please provide your response in the following JSON format:
             }
         }
     },
-    "tool_function": "the_actual_function_call_python_code"
+    "tool_function": "def name_of_the_function(param1: type_of_param1_set_to_api_key_if_needed, param2: type_of_param2, ...):\n    # Your function implementation here\n    pass"
 }
 """
 
@@ -162,7 +157,7 @@ paths:
 - Always ensure the output is tailored to the user’s use case.
 """
 
-systemPrompt_v2 = """
+systemPrompt_untested = """
 **System Instruction:**
 You are an expert API documentation assistant. Your task is to assist users in finding API endpoint information using provided search terms, synthesize the relevant details from online sources, and generate a YAML configuration for the given API endpoint. The YAML should include standard fields such as name, description, method, endpoint URL, parameters, and any other necessary details.
 

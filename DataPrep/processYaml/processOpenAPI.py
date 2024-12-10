@@ -1,10 +1,15 @@
 import yaml
 from jinja2 import Template
-# import logging
+
+# According to OpenAPI 3.1.0 specification, the following HTTP methods are supported:
+operation_list = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head', 'trace']
+
+# According to OpenAPI 3.1.0 specification, the following field including parameters to resolve the final endpoint:
+parameter_field = 'parameters'
 
 def endpoint_from_openapi_yaml(yaml_content):
     """
-    Process OpenAPI YAML content and extract API endpoints information.
+    Process OpenAPI YAML content and extract API info that is enough to navigate to a specific endpoint
     
     Args:
         yaml_content (dict): Parsed YAML content in OpenAPI format
@@ -28,17 +33,23 @@ def endpoint_from_openapi_yaml(yaml_content):
         
         # Iterate through each HTTP method for the path
         for method, method_data in path_data.items():
+            if method not in operation_list: continue
+            
             try:
                 operation_id = method_data.get('operationId')
             except:
+                print(f"No operationId found for {path} {method}")
                 print(method_data)
-                continue
+                raise Exception(f"No operationId found for {path} {method}")
+                # continue
             
             endpoint_info = {
                 'name': operation_id,
+                'operationId': operation_id,
                 'method': method.upper(),
                 'path': path
             }
+            
             endpoints.append(endpoint_info)
             
     return endpoints
@@ -118,8 +129,9 @@ if __name__ == "__main__":
     #     logging.error(f'Error processing OpenAPI YAML: {str(e)}')
     
     # Inspect one example
-    with open('../../APIdb/sample_todo/slack/openai/v1/openapi.yaml', 'r') as f:
+    # with open('../../APIdb/sample_todo/slack/openai/v1/openapi.yaml', 'r') as f:
+    with open('../../APIdb/sample_todo/zoom.us/2.0.0/openapi.yaml', 'r') as f:
         yaml_content = yaml.safe_load(f)
-        print(yaml_content['paths'])
+        print(type(yaml_content))
         
         

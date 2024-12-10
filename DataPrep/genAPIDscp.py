@@ -4,6 +4,7 @@ import yaml
 import dotenv
 from openai import OpenAI
 from formats import *
+from typing import Callable
 
 from processYaml.processOpenAPI import endpoint_from_openapi_yaml
 from processYaml.processSwagger import endpoint_from_swagger_yaml
@@ -25,11 +26,28 @@ def genDscpFromSearch(api_name: str, api_provider: str):
     pass
 
 
-def genDscpFromYaml(endpoint: dict, source_yaml_path: str):
+def genDscpFromYaml(endpoint: dict, source_yaml: dict) -> str:
+    """
+    Generate the API description from the loadedyaml file
+
+    Args:
+        endpoint (dict): the endpoint to generate description for
+        source_yaml (dict): the dict get from yaml.safe_load(open(source_yaml_path, 'r'))
+
+    Returns:
+        str: the generated API description
+        
+    endpoint(dict) is defined at processOpenAPI.py as:
+        endpoint_info = {
+            'name': operation_id,
+            'operationId': operation_id,
+            'method': method.upper(),
+            'path': path
+        }
+    """
     dotenv.load_dotenv()
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
-    source_yaml = yaml.safe_load(open(source_yaml_path, 'r'))
     prompt = genDscpFromYaml_withNoExec.replace('{source_yaml}', str(source_yaml)).replace('{target_endpoint}', str(endpoint))
 
     try:
@@ -62,10 +80,10 @@ def responseFormatCheck(response: str):
     Raises:
         ValueError: If the response format is invalid
     """
+    # Parse the JSON string into a Python dict
+    response_dict = json.loads(response)
+    
     try:
-        # Parse the JSON string into a Python dict
-        response_dict = json.loads(response)
-        
         # Validate against the Pydantic model
         validated_response = rawResponseWithNoExec(**response_dict)
         return True
@@ -76,7 +94,7 @@ def responseFormatCheck(response: str):
         return False
 
 
-def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
+def old_shortenOpenapiYaml(endpoint: dict, yaml_path: str):
     """
     Shorten the yaml file to only include the target endpoint and context
     Only support OpenAPI since it searches by operationId
@@ -87,6 +105,8 @@ def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
         
     Returns:
         dict: Shortened YAML dictionary containing only relevant endpoint info and API provider details
+        
+    OpenAPI Specification: https://swagger.io/specification/#:~:text=An%20OpenAPI%20document%20that%20conforms,in%20JSON%20or%20YAML%20format.
     """
     try:
         with open(yaml_path, 'r') as f:
@@ -97,8 +117,10 @@ def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
             # Keep API provider info
             'openapi': full_yaml.get('openapi'),
             'info': full_yaml.get('info'),
-            'servers': full_yaml.get('servers'),
-            'tags': full_yaml.get('tags'),
+            'servers': full_yaml.get('servers', '/'),
+            'security': full_yaml.get('security', []),
+            'tags': full_yaml.get('tags', []),
+            'externalDocs': full_yaml.get('externalDocs', {}),
             'paths': {}
         }
         
@@ -123,8 +145,57 @@ def shortenOpenapiYaml(endpoint: dict, yaml_path: str):
     except Exception as e:
         print(f"Error shortening OpenAPI YAML for {endpoint['name']}: {e}")
 
+def shortenOpenapiYaml(yaml_path: str, endpoint_extractor: Callable = endpoint_from_openapi_yaml):
+    """
+    An iterator that shortens the full yaml file to only include one endpoint and context at a time
+    Only support OpenAPI since it searches by operationId
+    
+    Args:
+        yaml_path (str): Path to the full OpenAPI YAML file
+        endpoint_extractor (Callable): The function to extract the endpoints from the yaml file. By default, it supports openapi yaml
+        
+    Returns:
+        tuple: (endpoint, shortened_yaml)
+        
+    OpenAPI Specification: https://swagger.io/specification/#:~:text=An%20OpenAPI%20document%20that%20conforms,in%20JSON%20or%20YAML%20format.
+    """
+    try:
+        with open(yaml_path, 'r') as f:
+            full_yaml = yaml.safe_load(f)
+            
+        # Create new yaml with only necessary parts
+        shortened_yaml_template = {
+            # Keep API provider info
+            'openapi': full_yaml.get('openapi'),
+            'info': full_yaml.get('info'),
+            'servers': full_yaml.get('servers', '/'),
+            'security': full_yaml.get('security', []),
+            'tags': full_yaml.get('tags', []),
+            'externalDocs': full_yaml.get('externalDocs', {}),
+            'paths': {}
+        }
+        
+        # Get all the paths
+        endpoints = endpoint_extractor(full_yaml)
+        
+        for endpoint in endpoints:
+            try:
+                endpoint_path = endpoint['path']
+                item = full_yaml['paths'][endpoint_path]
+                shortened_yaml = shortened_yaml_template
+                shortened_yaml['paths'][endpoint_path] = item
+                
+                yield endpoint, shortened_yaml
+            except Exception as e:
+                print(f"Error shortening OpenAPI YAML for {str(endpoint)[:10]}: {e}")
+        
+    except Exception as e:
+        print(e)
+
+
 if __name__ == "__main__":
-    # Try generated from the sample yaml set
+    
+    # Read the local yaml file
     DATA_DIR = '../APIdb/sample_todo'
     OUTPUT_DIR = './sample_output'
     for service_provider in os.listdir(DATA_DIR):
@@ -133,17 +204,19 @@ if __name__ == "__main__":
                 if file.endswith('.yaml'):
                     yaml_path = os.path.join(root, file)
                     print(f"Processing {yaml_path}")
-                    yaml_content = yaml.safe_load(open(yaml_path, 'r'))
+                    
+                    # Choose a endpoint extractor based on the file name. Noticed we only consider files end with .yaml
                     if file.startswith('openapi'):
-                        endpoints = endpoint_from_openapi_yaml(yaml_content)
+                        endpoint_extractor = endpoint_from_openapi_yaml
                     elif file.startswith('swagger'):
-                        endpoints = endpoint_from_swagger_yaml(yaml_content)
+                        endpoint_extractor = endpoint_from_swagger_yaml
+                        raise NotImplementedError   
                     else:
                         print(f"Unsupported type for now {str(file)}")
                         continue
-                    for endpoint in endpoints:
-                        r = genDscpFromYaml(endpoint, yaml_path)
-                        
+                    
+                    for endpoint, single_yaml in shortenOpenapiYaml(yaml_path, endpoint_extractor):
+                        r = genDscpFromYaml(endpoint, single_yaml)
                         try:
                             if r.startswith('```json') and r.endswith('```'):
                                 r = r[7:-3].strip('\n')
@@ -165,9 +238,8 @@ if __name__ == "__main__":
                             print(f"Invalid response format for {endpoint_name}")
                             print(r)
                             raise Exception
-                    
-                        with open(OUTPUT_DIR + '/' + endpoint_name + '.json', 'a') as f:
-                            # f.write(f"\n\n=== Processing endpoint {endpoint.get('name', 'unnamed')} from {yaml_path} ===\n")
+                        
+                        output_path = os.path.join(OUTPUT_DIR, f"{endpoint_name}.json")
+                        with open(output_path, 'w') as f:
                             f.write(r)
-                            # f.write("\n")
                     
