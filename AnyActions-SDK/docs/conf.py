@@ -8,7 +8,7 @@
 
 project = 'AnyActions'
 copyright = '2024, Anthea Zhao'
-author = 'Anthea Zhao'
+author = ['Anthea Zhao', 'Ziang Tong']
 release = '0.1.0'
 
 # -- General configuration ---------------------------------------------------
