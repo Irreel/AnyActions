@@ -16,6 +16,9 @@ from anyactions.core.procedure.act import Actor
 from anyactions.common.constants import LOCAL_ENV_PATH
 
 class ActionHub:
+    """
+    This is the main class for managing tools and API calls.
+    """
     
     def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, observer=False):
         """
@@ -182,6 +185,7 @@ class ActionHub:
     @deprecated
     def verification(self, api_name):
         """_summary_
+        @deprecated
         TODO: Currently it keeps 3rd party API keys locally
 
         This function checks if an API key is needed for the specified API, and if so,
@@ -345,12 +349,13 @@ class ActionHub:
         return data, output_schema
 
     def act(self, response_object):
+        """Execute the action based on response object and return the raw response"""
         response = Actor(self.api_dir_path, self.client, self.observer)(response_object)
         return response
 
         
-    def call(self, action_name, input_params):
-        """This is for calling tool functions directly without model"""
+    def call(self, action_name: str, input_params: dict):
+        """call tool functions directly without model"""
         # TODO
         raise NotImplementedError
     

@@ -56,3 +56,24 @@ $ poetry run python3 anyactions/main.py
 ```
 $ deactivate
 ```
+
+# Documentation
+<!-- ```
+$ poetry run sphinx-autodoc -o docs/source/api anyactions/
+$ poetry run sphinx-build -b html docs/source/api docs/build/api
+``` -->
+
+You should now populate your master file /Users/zhao/Documents/Startup/ProjActions/AnyActions/AnyActions-SDK/docs/index.rst and create other documentation source files. Use the Makefile to build the docs, like so:
+   make builder
+where "builder" is one of the supported builders, e.g. html, latex or linkcheck.
+
+For instance, `make html` will build the HTML documentation.
+
+## Coverage
+```
+sphinx-build -b coverage . _build/coverage
+```
+<!-- ```
+$ poetry run sphinx-coverage -o docs/source/api anyactions/
+$ poetry run sphinx-build -b html docs/source/api docs/build/api   
+``` -->

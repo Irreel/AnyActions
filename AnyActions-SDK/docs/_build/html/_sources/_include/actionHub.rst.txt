@@ -1,0 +1,11 @@
+.. AnyActions documentation master file
+
+ActionHub
+========================
+
+.. automodule:: anyactions.core.procedure.hub
+    :members:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:

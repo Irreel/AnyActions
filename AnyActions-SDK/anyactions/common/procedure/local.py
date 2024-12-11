@@ -164,19 +164,18 @@ def check_local_tool_auth_method(api_dir_path, tool_name, observer=False):
     return 1 if api_key_param.default == inspect._empty else 2
     
 def check_tool_decorator(tool_function: Callable[..., Any], target_decorator: str, observer=False) -> dict:
-    """
-    Check if a tool function has specific decorators.
-    
+    """Check if a tool function has specific decorators.
+
     Args:
         tool_function: The function to check for decorators
-        
+        target_decorator: The decorator name to check for
+        observer: Flag to enable logging, defaults to False
+
     Returns:
-        dict: Dictionary containing decorator information
-        {
-            'has_decorators': bool,
-            'decorators': list of decorator names,
-            'original_function': name of the original function
-        }
+        dict: Dictionary containing decorator information with the following keys:
+            - has_decorators: bool indicating if any decorators are present
+            - decorators: list of decorator names
+            - original_function: name of the original function
     """
     assert target_decorator in ['action', 'generated_action']
     

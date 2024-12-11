@@ -2,7 +2,7 @@
 name = "anyactions"
 version = "0.1.0"
 description = ""
-authors = ["Ziang Tong <97473223+DannyTDS@users.noreply.github.com>"]
+authors = ["Anthea Zhao <antheaz@anyactions.com>", "Ziang Tong <97473223+DannyTDS@users.noreply.github.com>"]
 readme = "README.md"
 packages = [
     { include = "anyactions" },
