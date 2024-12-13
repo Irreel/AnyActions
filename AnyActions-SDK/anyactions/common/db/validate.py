@@ -2,7 +2,7 @@
 Type and format validation
 """
 import re
-from anyactions.common.protocol.types import *
+from anyactions.common.types import *
 
 def validate_tool_name(tool_name: str) -> bool:
     assert isinstance(tool_name, str)

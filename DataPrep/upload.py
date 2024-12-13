@@ -30,11 +30,13 @@ def upload(file_path):
         # Please double check if the S3 target path is correct
         requests.post(
             os.getenv('UPLOAD_ENDPOINT'), 
+            headers={'x-api-key': os.getenv('AWS_GATEWAY_API_KEY')},
             json=data
         )
         
 
 if __name__ == '__main__':
-    for file in tqdm.tqdm(glob.glob('sample_output/wikimedia_org_get_metrics_editors_top_by_edits.json')):
+    # for file in tqdm.tqdm(glob.glob('sample_output/wikimedia_org_get_metrics_editors_top_by_edits.json')):
+    for file in tqdm.tqdm(glob.glob('have_uploaded/*.json')):
         upload(file)
     

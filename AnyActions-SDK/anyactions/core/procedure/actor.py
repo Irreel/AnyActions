@@ -12,6 +12,9 @@ from anyactions.common.protocol.protocols import ACTION_SUCCESS, ACTION_FAILURE
 from anyactions.common.procedure.local import get_local_api_key, check_tool_decorator, get_tool_callable, validate_local_tool
 
 class Actor:
+    """
+    Actor is a client that processes and executes local tool/function calls based on raw LLM response objects. Should support remote tool/function calls in the future.
+    """
     def __init__(self, api_dir_path: str, client = Client, observer=False):
         self.api_dir_path = api_dir_path
         self.client = client
@@ -138,10 +141,21 @@ class Actor:
         
         response = self._act_local(function_name, function_args)
         
-        return response
+        return self._parse_tool_result(response, output_schema=None)
     
-    def call(self, action_name, input_params: dict, api_key=None):
-        """Call a tool function from a local Python file manually.
+    def _parse_response(self, response_object, tool_calling_schema="openai"):
+        """Parse the response object and return the action request"""
+        raise NotImplementedError
+    
+    def _parse_tool_result(self, response_object, output_schema=None):
+        """Parse the return of tool call and return the tool result"""
+        if output_schema is None:
+            return response_object
+        else:
+            raise NotImplementedError
+    
+    def run(self, action_name, input_params: dict, api_key=None):
+        """Run a tool function from a local Python file manually.
         """
         raise NotImplementedError
     
@@ -212,5 +226,3 @@ class Actor:
         builder.set_action(action_name)
         # builder.set_tool_function(tool_function)
         return builder.get()
-
-    

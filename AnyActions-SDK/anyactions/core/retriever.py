@@ -1,4 +1,7 @@
+import sys
+import time
 import json
+import threading
 from anyactions.common import *
 from anyactions.common.constants import *
 from anyactions.core.client.client import Client
@@ -22,7 +25,7 @@ class Retriever:
         """
         if self.observer:
             print(f"Downloading {action_name}")
-        status, response = self.client.get(DOWNLOAD_EP, query=self.get_request(action_name))
+        status, response = self.client.get(DOWNLOAD_EP, query=self.get_request_by_name(action_name))
         if (status == RequestStatus.OK):
             return self.parse_response(response)
         elif (status == RequestStatus.NOT_FOUND):
@@ -32,9 +35,39 @@ class Retriever:
             )
             if_gen = input(prompt).lower().strip()
             if if_gen == "y":
-                # TODO: Fall back to generating with LLM
-                # self.client.post("generate", query=self.get_request(action_name))
-                raise NotImplementedError
+                
+                # Event to signal the spinner to stop
+                stop_spinner = threading.Event()
+                
+                def spinner():
+                    while not stop_spinner.is_set():
+                        for char in "|/-\\":
+                            sys.stdout.write(f"\r{char} Waiting for response...")
+                            sys.stdout.flush()
+                            time.sleep(0.1)
+                            if stop_spinner.is_set():
+                                break
+
+                # Start the spinner in a separate thread
+                spinner_thread = threading.Thread(target=spinner)
+                spinner_thread.start()
+                try:
+                    status, response = self.client.get(GEN_EP, query=self.get_request_by_gen(action_name))
+                finally:
+                    stop_spinner.set()
+                    spinner_thread.join()
+                    sys.stdout.write("\rDone!                     \n")
+                
+                if status == RequestStatus.OK:
+                    print(response)
+                    raise Exception("test")
+                
+                    return self.parse_response(response)
+                elif status == RequestStatus.FORBIDDEN:
+                    raise Exception(f"Forbidden: Please check your API key for AnyActions")
+                else:
+                    print(response)
+                    raise Exception(f"Failed to generate {action_name} tool: {status}")
             else:
                 raise Exception(f"Tool {action_name} not found")
         elif status == RequestStatus.FORBIDDEN:
@@ -42,8 +75,13 @@ class Retriever:
         else:
             raise Exception(f"Failed to download {action_name} tool: {status}")
     
-    def get_request(self, action_name: str) -> dict:
+    def get_request_by_name(self, action_name: str) -> dict:
         builder = GetApiByProviderActionRequestBuilder()
+        builder.set_action(action_name)
+        return builder.get()
+    
+    def get_request_by_gen(self, action_name: str) -> dict:
+        builder = GenerateApiRequestBuilder()
         builder.set_action(action_name)
         return builder.get()
     

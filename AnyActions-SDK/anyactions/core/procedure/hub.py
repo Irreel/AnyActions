@@ -8,19 +8,17 @@ from typing import List, Dict, Union, Optional
 from anyactions.common import *
 from anyactions.core.decorators import *
 from anyactions.common.procedure.local import *
-from anyactions.core.retrieve import Retriever
+from anyactions.core import Retriever, Actor
 from anyactions.core.client import Client, RequestStatus
 
-from anyactions.core.procedure.act import Actor
-
-from anyactions.common.constants import LOCAL_ENV_PATH
+from anyactions.common.constants import LOCAL_ENV_PATH, CONFIG_PATH
 
 class ActionHub:
     """
     This is the main class for managing tools and API calls.
     """
     
-    def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, observer=False):
+    def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, config_path=CONFIG_PATH, observer=False):
         """
         Initialize the ActionHub class which manages tool loading, API key handling, and tool execution.
         
@@ -68,12 +66,25 @@ class ActionHub:
         ## API Key Initialization
         self.api_dir_path = api_dir_path
         self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
-        self.api_config_path = os.path.join(api_dir_path, '.config')
+        self.api_config_path = config_path
         
         
-    def get_local_tool_list(self):
+    def get_local_action_list(self):
         # This local tool list includes the tools that have been stored in the local file, notice this does not mean their api keys always work
         return get_all_local_tool_names(self.api_dir_path, self.observer)
+        
+    def get_all_config(self):
+        with open(self.api_config_path, 'r') as f:
+            return json.load(f)
+        
+    def update_tool_config(self, action_name: str, config: dict):
+        current_config = self.get_all_config()
+        
+        current_config[action_name] = config
+        with open(self.api_config_path, 'w') as f:
+            json.dump(current_config, f)
+        if self.observer:
+            print(f"Updated {action_name} config: {config.keys()}")
         
     def tools(self, tool_list: List[str | dict]) -> List[dict]:
         """
@@ -93,7 +104,7 @@ class ActionHub:
         """
         
         definition_list = []
-        local_tool_list = self.get_local_tool_list()
+        local_tool_list = self.get_local_action_list()
         
         for i in tool_list: 
             if isinstance(i, str):
@@ -181,7 +192,7 @@ class ActionHub:
         
         except Exception as e:
             raise Exception(f"Failed to set up {tool_name} tool in local environment: {e}")
-      
+  
     @deprecated
     def verification(self, api_name):
         """_summary_
@@ -275,78 +286,6 @@ class ActionHub:
                 raise ValueError(f"Failed to create {legal_api_name} key")  
         
         return True, provider_name, action_name, inter_api_key
-
-    @deprecated
-    def _act_mock(self, api_name, input_params, endpoint_cache=True):
-
-        assert isinstance(api_name, str)
-        
-        # Format input params
-        match input_params:
-            case dict():
-                pass
-            case str():
-                try:
-                    input_params = json.loads(input_params)
-                except json.JSONDecodeError as e:
-                    print(f"Error decoding input parameters: {e}")
-                    raise ValueError("Invalid JSON string provided for input_params")
-            case list():
-                raise NotImplementedError
-            case tuple():
-                raise NotImplementedError
-            case _:
-                raise ValueError("Unsupported input parameter type")
-        
-        # TODO: Search target API if api_name is not specified
-        if api_name not in db_index:
-            # TODO: Search a relevant endpoint in the database
-            search_result = ''
-            
-            # TODO: Not sure about this feature: save/append the called function into local file??
-            
-            raise NotImplementedError
-        
-        else:
-            # Specify an api_name
-            status, provider_name, action_name, inter_api_key = self.verification(api_name)
-            
-            # Get the calling specification
-            request_type = db[provider_name][action_name]["request"]
-            endpoint = db[provider_name][action_name]["endpoint"] 
-            endpoint_params = db[provider_name][action_name].get('endpoint_params', None)
-            if endpoint_params:
-                endpoint = self.resolved_endpoint[api_name]
-            input_schema = db[provider_name][action_name]["input_schema"]
-            config_params = db[provider_name][action_name].get('config_params', None)
-            output_schema = db[provider_name][action_name]["output_schema"]
-            
-            # TODO: Consider required params and optional params
-            
-            # This is the params passing to the request, which can be different than user input params
-            pass_params = {**input_params, **config_params} if config_params else input_params
-            
-            # TODO: Add more calling authentication methods
-            if inter_api_key:
-                pass_params["api_key"] = inter_api_key
-            
-            
-        ######
-        # Execute the function
-        #####
-        
-        # TODO: other request types
-        
-        if request_type == "GET":
-            try:
-                response = requests.get(endpoint, params=pass_params)
-            except Exception as e:
-                # print(f"{api_name} {request_type} request error: {e}")
-                raise Exception(e)
-                
-            data = response.json()
-        
-        return data, output_schema
 
     def act(self, response_object):
         """Execute the action based on response object and return the raw response"""

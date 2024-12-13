@@ -95,6 +95,24 @@ class SaveApiRequestBuilder:
         return self.api_definition
 
 
+class GenerateApiRequestBuilder:
+    def __init__(self):
+        self.api_request = {
+            "action_name": ""
+        }
+    
+    def set_action(self, action: str) -> None:
+        assert isinstance(action, str)
+        
+        # For the current wild search pipeline, do not need to validate the search term
+        # self.api_request["action_name"] = validate_tool_name(action)
+        
+        self.api_request["action_name"] = action
+        
+    def get(self) -> dict:
+        return self.api_request
+
+
 class CallbackApiRequestBuilder:
     def __init__(self):
         self.api_request = {
