@@ -4,6 +4,11 @@
 
 AnyActions helps you build LLM agents with external tools and manage tool usage authentication easier and faster. 
 
+### Features
+- Manage tool usage context, authentication, and invocation for LLMs
+- Search and plug in available tools from our public database easily
+- **Request AnyActions agent to generate tool usage context and tool functions for you!**
+
 ## Setup
 `python >= 3.10`
 
@@ -12,16 +17,17 @@ For the SDK set up, see [AnyActions-SDK/README.md](AnyActions-SDK/README.md)
 ## Core Design
 
 ActionHub
-- Manage local tool functions: Create, Read, Update, and Delete (CRUD)
-- Manage authentication for invoking tool functions: Create, Read, Update, and Delete (CRUD). Currently, only API keys are supported. More authentication methods will be supported in the future.
-- Parse LLM responses for tool usage
+- The main component that manages tool usage, orchestrates the tool authentication and invocation process
+- Manage authentication for tool usage: Create, Read, Update, and Delete (CRUD). Currently, only API keys are supported. More authentication methods will be supported in the future.
+- Manage tool usage context for LLMs, like input schema.
 
 Retriever
 - Retrieve available tools from AnyActions database
-- Extract tool usage context for LLMs
+- For unavailable tools, request our AnyActions agent to generate tool usage context and tool functions for you
 
 Actor
-- One-to-one client for executing tool functions based on LLM responses
+- Parse LLM responses for tool usage
+- One-to-one client for executing tool functions based on parsed LLM responses
 
 ##### Notes
 We named with the term `action` based on the [OpenAI convention](https://platform.openai.com/docs/actions/introduction). In Anthropic's documentation, it is equivalent to `tool`. However, we realized that OpenAI also conflates the term `tool` with `action`. They are the same concept in our SDK.
