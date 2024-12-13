@@ -8,7 +8,7 @@ from anyactions.core.client.client import Client
 from anyactions.core.client.request_status import RequestStatus
 
 """
-Interact with the API to retrieve the tool and post-process the response
+Interact with the API to retrieve the tool and tool usage context
 """ 
 
 class Retriever:
