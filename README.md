@@ -2,7 +2,7 @@
 
 ## Setup
 `python >= 3.10`
-
+For the SDK, see [AnyActions-SDK/README.md](AnyActions-SDK/README.md)
 
 ## Core Design
 
