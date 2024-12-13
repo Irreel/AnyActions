@@ -4,7 +4,6 @@
 │   ├── README.md
 │   ├── .env                # environment variables definition
 │   ├── .env.example        # documentation for .env
-│   ├── conf.py             # auto documentation plugin
 │   ├── poetry.lock
 │   ├── pyproject.toml      # poetry config
 │   ├── anyactions/         # source
@@ -12,6 +11,10 @@
 │   │   ├── main.py         # main entry point
 |   |   └── ...
 |   ├── tests/
+│   │   └── ...
+│   ├── docs/
+│   │   └── conf.py         # auto documentation plugin
+│   │   └── index.rst       # documentation index
 │   │   └── ...
 ```
 

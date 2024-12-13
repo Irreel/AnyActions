@@ -1,11 +1,6 @@
 .env
-.env_api_key
+.env_*
 .actions/
-./AAPI/aapi/register_api_tmp.py
-tmp.*
-tmp_*
-tmp/
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -171,3 +166,13 @@ cython_debug/
 #.idea/
 
 myREADME.md
+
+
+tmp.*
+tmp_*
+*_tmp.*
+tmp/
+
+db/
+etl/
+mock/

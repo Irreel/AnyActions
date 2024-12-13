@@ -1,0 +1,20 @@
+{
+  "name": "hello_world",
+  "tool_function": "print('Hello, World!')",
+  "tool_definition": {
+    "type": "function",
+    "properties": {
+      "firstname": {
+        "type": "string",
+        "description": "The user's first name."
+      },
+      "lastname": {
+        "type": "string",
+        "description": "The user's last name."
+      }
+    },
+    "required": ["firstname"]
+  },
+  "instruction": "https://example.com/register"
+}
+  
