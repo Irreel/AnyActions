@@ -40,9 +40,16 @@ class Retriever:
                 stop_spinner = threading.Event()
                 
                 def spinner():
+                    start_time = time.time()
+                    caption = "Searching available APIs and YAML config..."
+                    updated = False
                     while not stop_spinner.is_set():
                         for char in "|/-\\":
-                            sys.stdout.write(f"\r{char} Waiting for response...")
+                            elapsed_time = time.time() - start_time
+                            if not updated and elapsed_time >= 15:
+                                caption = "Parsing YAML and programming tool functions. This might take 30 seconds..."
+                                updated = True
+                            sys.stdout.write(f"\r{char} {caption}")
                             sys.stdout.flush()
                             time.sleep(0.1)
                             if stop_spinner.is_set():
@@ -51,27 +58,37 @@ class Retriever:
                 # Start the spinner in a separate thread
                 spinner_thread = threading.Thread(target=spinner)
                 spinner_thread.start()
+                
                 try:
                     status, response = self.client.get(GEN_EP, query=self.get_request_by_gen(action_name))
                 finally:
                     stop_spinner.set()
                     spinner_thread.join()
-                    sys.stdout.write("\rDone!                     \n")
-                
+                    sys.stdout.write("\rDone!                                                   \n")
+        
                 if status == RequestStatus.OK:
-                    print(response)
-                    raise Exception("test")
+                    
+                    try:
+                        response_parsed = self.parse_response(response)
+                    except Exception as e:
+                        if self.observer:
+                            print(f"Failed to parse response: {e}")
+                        return Exception(f"Search available APIs and YAML failed. You can specify more specific action name and try again.")
+                    
+                    return response_parsed
                 
-                    return self.parse_response(response)
                 elif status == RequestStatus.FORBIDDEN:
                     raise Exception(f"Forbidden: Please check your API key for AnyActions")
+                
                 else:
-                    print(response)
                     raise Exception(f"Failed to generate {action_name} tool: {status}")
+                
             else:
                 raise Exception(f"Tool {action_name} not found")
+            
         elif status == RequestStatus.FORBIDDEN:
             raise Exception(f"Forbidden: Please check your API key for AnyActions")
+        
         else:
             raise Exception(f"Failed to download {action_name} tool: {status}")
     
@@ -86,26 +103,32 @@ class Retriever:
         return builder.get()
     
     def parse_response(self, response: dict):        
-        if response["message"] == "Files retrieved successfully":
+        if response["message"] == "Success":
             
             gen_flg = response["files"]["gen_flg"]
             if gen_flg not in [0, 1]:
                 if self.observer:
                     print(f"Invalid gen_flg value: {gen_flg}. Must be 0 or 1")
-                return RequestStatus.INTERNAL_SERVER_ERROR
+                # Default to 0
+                gen_flg = 0
             gen_flg = bool(gen_flg)
             
-            instruction = response["files"].get("registration_link", None)
+            instruction = response["files"].get("instruction", None)
             
-            tool_def = response["files"]["tool_definition.json"]
+            tool_def = response["files"]["tool_definition"]
             try:
-                tool_def = json.loads(tool_def)
+                if isinstance(tool_def, str):
+                    tool_def = json.loads(tool_def)
+                elif isinstance(tool_def, dict):
+                    pass
+                else:
+                    raise Exception(f"Invalid tool definition format: {type(tool_def)}")
             except Exception as e:
                 if self.observer:
                     print(f"Invalid tool definition json format: {e}")
                 return RequestStatus.INTERNAL_SERVER_ERROR
             
-            func_body = response["files"]["tools.py"]
+            func_body = response["files"]["tool_function"]
             try:
                 func_body = self.parse_func_str(gen_flg, tool_def, func_body)
             except Exception as e:
@@ -115,9 +138,10 @@ class Retriever:
             
             return (gen_flg, instruction, tool_def, func_body)
         else:
+            if self.observer:
+                print(f"Unknown response message: {response['message']}")
             return RequestStatus.INTERNAL_SERVER_ERROR
         
-
 
     def parse_func_str(self, gen_flg: bool, tool_definition: str|dict, func_str: str):
         """

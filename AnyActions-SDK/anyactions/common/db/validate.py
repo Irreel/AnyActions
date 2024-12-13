@@ -4,19 +4,19 @@ Type and format validation
 import re
 from anyactions.common.types import *
 
-def validate_tool_name(tool_name: str) -> bool:
-    assert isinstance(tool_name, str)
+def validate_action_name(action_name: str) -> bool:
+    assert isinstance(action_name, str), "Action name must be a string"
     # Check for spaces
-    if ' ' in tool_name:
-        raise ValueError("Tool name cannot contain spaces")
+    if ' ' in action_name:
+        raise ValueError("Action name cannot contain spaces")
     
     # Check for special characters except underscore
-    if not re.match(r'^[a-zA-Z_]+$', tool_name):
-        raise ValueError("Tool name can only contain letters and underscores")
+    if not re.match(r'^[a-zA-Z_]+$', action_name):
+        raise ValueError("Action name can only contain letters and underscores")
     
     # TODO: Regular experssion
     
-    return tool_name.lower()
+    return action_name.lower()
 
 def check_function_syntax(tool_calling_function: str):
     """

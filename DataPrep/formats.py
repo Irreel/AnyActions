@@ -53,3 +53,19 @@ class rawResponseWithNoExec(BaseModel):
 #         }
 #     }
 #     tool_function: str
+
+def check_name_consistency(tool_name: str, generatedApiSpec: dict):
+    generatedApiSpec['tool_definition']['function']['name'] = tool_name
+    
+    func_body = generatedApiSpec['tool_function']
+    
+    if func_body.find(tool_name) == -1:
+        # Replace function name in function body
+        func_lines = func_body.split('\n')
+        for i, line in enumerate(func_lines):
+            if line.startswith('def '):
+                func_lines[i] = line.replace(line[4:line.find('(')], tool_name)
+                break
+        generatedApiSpec['tool_function'] = '\n'.join(func_lines)
+    
+    return generatedApiSpec

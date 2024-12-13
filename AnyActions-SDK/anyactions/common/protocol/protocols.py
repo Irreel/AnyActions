@@ -5,7 +5,7 @@ ACTION_FAILURE = b"failure"
 
 """Protocol for talking to the AnyActions server"""
 from anyactions.common.procedure.local import function_to_json
-from anyactions.common.db.validate import validate_tool_name
+from anyactions.common.db.validate import validate_action_name
 
 from typing import Callable, Literal
 
@@ -19,7 +19,7 @@ class GetApiByProviderActionRequestBuilder:
         }
 
     def set_action(self, action: str) -> None:
-        self.api_request["action_name"] = validate_tool_name(action)
+        self.api_request["action_name"] = validate_action_name(action)
 
     def get(self) -> dict:
         return self.api_request
@@ -60,7 +60,7 @@ class SaveApiRequestBuilder:
         self.api_definition["name"] = name
 
     def set_action(self, action: str) -> None:
-        self.api_definition["action"] = validate_tool_name(action)
+        self.api_definition["action"] = validate_action_name(action)
 
     def set_host(self, host: str) -> None:
         assert isinstance(host, str)
@@ -104,10 +104,8 @@ class GenerateApiRequestBuilder:
     def set_action(self, action: str) -> None:
         assert isinstance(action, str)
         
-        # For the current wild search pipeline, do not need to validate the search term
-        # self.api_request["action_name"] = validate_tool_name(action)
-        
-        self.api_request["action_name"] = action
+        self.api_request["action_name"] = validate_action_name(action)
+        # self.api_request["action_name"] = action
         
     def get(self) -> dict:
         return self.api_request
@@ -122,7 +120,7 @@ class CallbackApiRequestBuilder:
 
     def set_action(self, action: str) -> None:
         assert isinstance(action, str)
-        self.api_request["action_name"] = validate_tool_name(action)
+        self.api_request["action_name"] = validate_action_name(action)
         
     def set_message(self, message: Literal[ACTION_SUCCESS, ACTION_FAILURE]) -> None:
         assert isinstance(message, ACTION_SUCCESS | ACTION_FAILURE)

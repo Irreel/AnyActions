@@ -7,15 +7,17 @@ class Client:
     """
     Client to interact with the AnyActions API, deployed on AWS API Gateway.
     """
-    def __init__(self, base_url: str = SERVER_BASE_URL, api_key: str = None):
+    def __init__(self, base_url: str = SERVER_BASE_URL, api_key: str = None, observer: bool = False):
         """
         Constructor for the Client class.
 
         :param base_url: The base URL of the API.
         :param api_key: The API key to authenticate the client.
+        :param observer: Whether to print debug messages.
         """
         self.base_url = base_url
         self.api_key = api_key
+        self.observer = observer
     
 
     def get(self, path: str, query: dict = None) -> tuple[RequestStatus, dict|None]:
@@ -31,6 +33,9 @@ class Client:
         if status == RequestStatus.OK:
             return (status, self.get_response_body(response))
         else:
+            if self.observer:
+                print(f"Request failed with status: {status}")
+                print(f"Response: {self.get_response_body(response)}")
             return (status, None)
 
     def post(self, path: str, data: dict) -> RequestStatus:

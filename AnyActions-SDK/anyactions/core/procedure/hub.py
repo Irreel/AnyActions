@@ -54,7 +54,7 @@ class ActionHub:
         self.user = {
             "api_key": os.environ["AWS_GATEWAY_API_KEY"],
         }
-        self.client = Client(self.base_url, self.user["api_key"])
+        self.client = Client(self.base_url, self.user["api_key"], self.observer)
         self.retriever = Retriever(self.client, self.observer)
         
         ## Local tool loading
@@ -159,6 +159,8 @@ class ActionHub:
         
         try:
             gen_flg, instruction, tool_def, func_body = response
+            if self.observer:
+                print(f"Retrieved tool function: {tool_name}")
         except Exception as e:
             raise Exception(f"Failed to retrieve {tool_name} tool: {e}")
         
