@@ -213,6 +213,7 @@ class Actor:
         except AttributeError as e:
             raise AttributeError(f"Tool function {action_name} not found in module: {e}")
         except Exception as e:
+            print(e)
             raise Exception
 
     def callback(self, action_name: str, tool_function: Callable, observer=False):

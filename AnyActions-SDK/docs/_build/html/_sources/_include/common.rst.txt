@@ -5,7 +5,7 @@ Common
 
 common
 
-.. automodule:: anyactions.common.procedure.local
+.. automodule:: anyactions.common.local
     :members:
 
 .. toctree::

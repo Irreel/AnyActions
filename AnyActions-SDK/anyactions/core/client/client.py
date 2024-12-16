@@ -35,7 +35,8 @@ class Client:
         else:
             if self.observer:
                 print(f"Request failed with status: {status}")
-                print(f"Response: {self.get_response_body(response)}")
+                if status == RequestStatus.INTERNAL_SERVER_ERROR:
+                    print(f"{self.get_response_body(response)}")
             return (status, None)
 
     def post(self, path: str, data: dict) -> RequestStatus:

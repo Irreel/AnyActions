@@ -74,8 +74,17 @@ def read_local_tool(api_dir_path: str, tool_name: str) -> dict:
         "status": None,
     }
 
+def write_local_key(api_key_path: str, tool_name: str, key: str) -> bool:
+    api_key_path = os.path.join(api_key_path, f"{tool_name.upper()}_KEY")
+    try:
+        with open(api_key_path, 'w') as f:
+            f.write(key)
+        return True
+    except Exception as e:
+        return False
+
 ######
-# Local tool directory
+# Local directory
 ######    
 def create_local_tools_dir(api_dir_path, observer=False):
     """Create local directory for storing tools"""
@@ -95,7 +104,7 @@ def create_local_tools_dir(api_dir_path, observer=False):
 ######
 # Validation for local tool calling
 ######    
-def check_local_tool_legit(api_dir_path, tool_name, observer=False):
+def check_local_tool_legit(api_dir_path: str, tool_name: str, observer=False):
     """Check if local tools directory exists and with api keys"""
     assert check_local_tools_dir_exists(api_dir_path)
     assert check_local_tool_exists(api_dir_path, tool_name)
@@ -119,7 +128,7 @@ def check_local_tool_legit(api_dir_path, tool_name, observer=False):
     if "api_key" in signature.parameters:
         api_key_param = signature.parameters["api_key"]
         if api_key_param.default == inspect._empty:
-            assert check_local_api_key_exists(api_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key.")
+            assert check_local_api_key_exists(api_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key by: ActionHub.set_key()")
     
     # TODO:Check if dependencies are satisfied
     
@@ -130,13 +139,13 @@ def check_local_tools_dir_exists(api_dir_path: str, observer=False):
     assert os.path.exists(api_dir_path), LocalToolException(f"Local tools directory does not exist: {api_dir_path}. Check if ActionHub is initialized correctly.")
     return True
 
-def check_local_tool_exists(api_dir_path, tool_name, observer=False):
+def check_local_tool_exists(api_dir_path: str, tool_name: str, observer=False):
     """Check if local tool exists"""
     tool_path = os.path.join(api_dir_path, f"{tool_name}.py")
     assert os.path.exists(tool_path), LocalToolException(f"Local tool does not exist: {tool_path}. Check if the tool is registered in ActionHub.")
     return True
 
-def check_local_api_key_exists(api_dir_path, tool_name, observer=False):
+def check_local_api_key_exists(api_dir_path: str, tool_name: str, observer=False):
     """Check if api key exists"""
     api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
     if not os.path.exists(api_key_path):

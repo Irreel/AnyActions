@@ -3,10 +3,10 @@
 Core
 ========================
 
-.. automodule:: anyactions.core.procedure.hub
+.. automodule:: anyactions.core.hub
     :members:
 
-.. automodule:: anyactions.core.retrieve
+.. automodule:: anyactions.core.retriever
     :members:
     :imported-members:
     

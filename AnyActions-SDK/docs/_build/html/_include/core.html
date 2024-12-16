@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <title>Core &#8212; AnyActions 0.1.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=61cd365c" />
     <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=686e5160" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
     <script src="../_static/documentation_options.js?v=01f34227"></script>
@@ -33,27 +33,33 @@
 
           <div class="body" role="main">
             
-  <section id="module-anyactions.core.procedure.hub">
-<span id="core"></span><h1>Core<a class="headerlink" href="#module-anyactions.core.procedure.hub" title="Link to this heading">¶</a></h1>
+  <section id="module-anyactions.core.hub">
+<span id="core"></span><h1>Core<a class="headerlink" href="#module-anyactions.core.hub" title="Link to this heading">¶</a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="anyactions.core.procedure.hub.ActionHub">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.procedure.hub.</span></span><span class="sig-name descname"><span class="pre">ActionHub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_dir_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.actions/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.procedure.hub.ActionHub" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="anyactions.core.hub.ActionHub">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.hub.</span></span><span class="sig-name descname"><span class="pre">ActionHub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'openai'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_dir_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.actions/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.actions/.config'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.hub.ActionHub" title="Link to this definition">¶</a></dt>
 <dd><p>This is the main class for managing tools and API calls.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="anyactions.core.procedure.hub.ActionHub.act">
-<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response_object</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.procedure.hub.ActionHub.act" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="anyactions.core.hub.ActionHub.act">
+<span class="sig-name descname"><span class="pre">act</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response_object</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.hub.ActionHub.act" title="Link to this definition">¶</a></dt>
 <dd><p>Execute the action based on response object and return the raw response</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="anyactions.core.procedure.hub.ActionHub.call">
-<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.procedure.hub.ActionHub.call" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="anyactions.core.hub.ActionHub.call">
+<span class="sig-name descname"><span class="pre">call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.hub.ActionHub.call" title="Link to this definition">¶</a></dt>
 <dd><p>call tool functions directly without model</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="anyactions.core.procedure.hub.ActionHub.tools">
-<span class="sig-name descname"><span class="pre">tools</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.procedure.hub.ActionHub.tools" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="anyactions.core.hub.ActionHub.set_key">
+<span class="sig-name descname"><span class="pre">set_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.hub.ActionHub.set_key" title="Link to this definition">¶</a></dt>
+<dd><p>Set up authentication (API key) for a tool by adding an API key to the local environment</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="anyactions.core.hub.ActionHub.tools">
+<span class="sig-name descname"><span class="pre">tools</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tool_list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.hub.ActionHub.tools" title="Link to this definition">¶</a></dt>
 <dd><p>Initialize a set of tool definitions available to LLM
 It loads existing local tools and use retriever to set up new tools
 If the entry in tool_list is a dictionary, it is treated as the tool definition directly</p>
@@ -76,43 +82,111 @@ If the entry in tool_list is a dictionary, it is treated as the tool definition 
 </dl>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="py exception" id="module-anyactions.core.retriever">
+<dt class="sig sig-object py" id="anyactions.core.retriever.AWSGatewayException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">AWSGatewayException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.AWSGatewayException" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="anyactions.core.retriever.AWSInternalException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">AWSInternalException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.AWSInternalException" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="anyactions.core.retriever.AnyActionsException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">AnyActionsException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.AnyActionsException" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="anyactions.core.retriever.Client">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">Client</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">observer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.Client" title="Link to this definition">¶</a></dt>
+<dd><p>Client to interact with the AnyActions API, deployed on AWS API Gateway.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="anyactions.core.procedure.hub.ActionHub.verification">
-<span class="sig-name descname"><span class="pre">verification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">api_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.procedure.hub.ActionHub.verification" title="Link to this definition">¶</a></dt>
-<dd><p>_summary_
-&#64;deprecated
-TODO: Currently it keeps 3rd party API keys locally</p>
-<p>This function checks if an API key is needed for the specified API, and if so,
-attempts to retrieve from local api index or create one. It handles both APIs that require keys and
-those that don’t.</p>
+<dt class="sig sig-object py" id="anyactions.core.retriever.Client.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.Client.get" title="Link to this definition">¶</a></dt>
+<dd><p>Send a GET request to the API.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>api_name</strong> (<em>str</em>) – The name of the API to verify.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>A tuple containing:</dt><dd><ul class="simple">
-<li><p>status (bool): True if verification was successful, False otherwise.</p></li>
-<li><p>provider_name (str): The name of the API provider.</p></li>
-<li><p>action_name (str): The name of the specific API action.</p></li>
-<li><p>inter_api_key (str or None): The API key if required, None otherwise.</p></li>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The path of the API endpoint.</p></li>
+<li><p><strong>query</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – The query to send with the request.</p></li>
 </ul>
 </dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code>[<a class="reference internal" href="#anyactions.core.retriever.RequestStatus" title="anyactions.core.client.request_status.RequestStatus"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequestStatus</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</span></p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The response from the API, or None if the request failed.</p>
+</dd>
 </dl>
-</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="anyactions.core.retriever.Client.post">
+<span class="sig-name descname"><span class="pre">post</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.Client.post" title="Link to this definition">¶</a></dt>
+<dd><p>Send a POST request to the API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></span>) – The path of the API endpoint.</p></li>
+<li><p><strong>data</strong> (<span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></span>) – The data to send with the request.</p></li>
+</ul>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>tuple</p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#anyactions.core.retriever.RequestStatus" title="anyactions.core.client.request_status.RequestStatus"><code class="xref py py-class docutils literal notranslate"><span class="pre">RequestStatus</span></code></a></span></p>
 </dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If creation of a required API key fails.</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The status of the request.</p>
 </dd>
 </dl>
 </dd></dl>
 
 </dd></dl>
 
-<div class="toctree-wrapper compound" id="module-anyactions.core.retrieve">
+<dl class="py class">
+<dt class="sig sig-object py" id="anyactions.core.retriever.GetApiByProviderActionRequestBuilder">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">GetApiByProviderActionRequestBuilder</span></span><a class="headerlink" href="#anyactions.core.retriever.GetApiByProviderActionRequestBuilder" title="Link to this definition">¶</a></dt>
+<dd><p>Builder for GetApiByProviderActionRequest</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="anyactions.core.retriever.LocalToolException">
+<em class="property"><span class="pre">exception</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">LocalToolException</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.LocalToolException" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="anyactions.core.retriever.RequestStatus">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">RequestStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.RequestStatus" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="anyactions.core.retriever.ToolDefinition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">anyactions.core.retriever.</span></span><span class="sig-name descname"><span class="pre">ToolDefinition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#anyactions.core.retriever.ToolDefinition" title="Link to this definition">¶</a></dt>
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="anyactions.core.retriever.ToolDefinition.model_computed_fields">
+<span class="sig-name descname"><span class="pre">model_computed_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[Dict[str,</span> <span class="pre">ComputedFieldInfo]]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#anyactions.core.retriever.ToolDefinition.model_computed_fields" title="Link to this definition">¶</a></dt>
+<dd><p>A dictionary of computed field names and their corresponding <cite>ComputedFieldInfo</cite> objects.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="anyactions.core.retriever.ToolDefinition.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[ConfigDict]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#anyactions.core.retriever.ToolDefinition.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="anyactions.core.retriever.ToolDefinition.model_fields">
+<span class="sig-name descname"><span class="pre">model_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">ClassVar[Dict[str,</span> <span class="pre">FieldInfo]]</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'function':</span> <span class="pre">FieldInfo(annotation=Function,</span> <span class="pre">required=True),</span> <span class="pre">'type':</span> <span class="pre">FieldInfo(annotation=str,</span> <span class="pre">required=False,</span> <span class="pre">default='function')}</span></em><a class="headerlink" href="#anyactions.core.retriever.ToolDefinition.model_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Metadata about the fields defined on the model,
+mapping of field names to [<cite>FieldInfo</cite>][pydantic.fields.FieldInfo] objects.</p>
+<p>This replaces <cite>Model.__fields__</cite> from Pydantic V1.</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="toctree-wrapper compound">
 </div>
 </section>
 
@@ -145,7 +219,15 @@ those that don’t.</p>
 <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Core</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.procedure.hub.ActionHub"><code class="docutils literal notranslate"><span class="pre">ActionHub</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.hub.ActionHub"><code class="docutils literal notranslate"><span class="pre">ActionHub</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.AWSGatewayException"><code class="docutils literal notranslate"><span class="pre">AWSGatewayException</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.AWSInternalException"><code class="docutils literal notranslate"><span class="pre">AWSInternalException</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.AnyActionsException"><code class="docutils literal notranslate"><span class="pre">AnyActionsException</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.Client"><code class="docutils literal notranslate"><span class="pre">Client</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.GetApiByProviderActionRequestBuilder"><code class="docutils literal notranslate"><span class="pre">GetApiByProviderActionRequestBuilder</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.LocalToolException"><code class="docutils literal notranslate"><span class="pre">LocalToolException</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.RequestStatus"><code class="docutils literal notranslate"><span class="pre">RequestStatus</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#anyactions.core.retriever.ToolDefinition"><code class="docutils literal notranslate"><span class="pre">ToolDefinition</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="common.html">Common</a></li>
