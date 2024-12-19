@@ -3,7 +3,7 @@ import json
 import requests
 from getpass import getpass
 from dotenv import load_dotenv
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Union, Optional, Callable
 
 from anyactions.common import *
 from anyactions.core.decorators import *
@@ -147,6 +147,52 @@ class ActionHub:
                 raise ValueError("Tool list should be a list of strings or dictionaries")
         
         return definition_list
+    
+    def tools_func(self, tool_list: List[str | Callable]) -> List[Callable]:
+        """
+        Initialize a set of tool definitions available to LLM
+        It loads existing local tools and use retriever to set up new tools
+        If the entry in tool_list is a callable, it is treated as the tool definition directly
+        
+        Args:
+            tool_list (List[str | Callable]): List of tool names or tool definitions
+
+        Raises:
+            Exception: tool definition parsing failed
+            ValueError: tool definition is not in the correct format
+
+        Returns:
+            List[dict]: tool definition list
+        """
+        
+        callable_list = []
+        local_tool_list = self.get_local_action_list()
+        
+        for i in tool_list: 
+            if isinstance(i, str):
+                # Load tools from local
+                if i in local_tool_list:
+                    try:
+                        check_local_tool_legit(self.api_dir_path, i, self.observer)
+                    except AssertionError as e:
+                        print(e)
+                    try:
+                        callable_list.append(get_tool_callable(file_path=os.path.join(self.api_dir_path, f"{i}.py"), action_name=i))
+                    except Exception as e:
+                        raise Exception(f"{i} Parse tool definition failed. Please check if {self.api_dir_path}{i}.py is valid: {e}")
+                else:
+                    # If not existed in local env, setup new tools
+                    parsed_tool_def = self._setup_tool(i)
+                    callable_list.append(get_tool_callable(file_path=os.path.join(self.api_dir_path, f"{i}.py"), action_name=i))
+
+            elif isinstance(i, Callable):
+                # The entry is a Callable, add as the tool directly
+                    callable_list.append(i)
+
+            else:
+                raise ValueError("Tool list should be a list of strings or callables")
+        
+        return callable_list
         
     def _setup_tool(self, tool_name) -> dict:
         """Set up a new tool by retrieving its definition and handling API key configuration.
@@ -205,16 +251,56 @@ class ActionHub:
         except Exception as e:
             raise Exception(f"Failed to set up {tool_name} tool in local environment: {e}")
   
+  
     def act(self, response_object):
         """Execute the action based on response object and return the raw response"""
         response = Actor(self.api_dir_path, self.client, self.observer)(response_object)
         return response
 
         
-    def call(self, action_name: str, input_params: dict):
-        """call tool functions directly without model"""
-        # TODO
-        raise NotImplementedError
+    def call(self, action_name: str, input_params: dict, is_auth: bool = False):
+        """Call tool functions directly without model
+        Args:
+            action_name (str): The name of the action to call. Should be the function name and file name in the tool directory.
+            input_params (dict): The input parameters for the function calling
+            is_auth (bool): Indicate if the action requires AnyActions to handle authentication
+        """
+        params = input_params.copy()
+        if is_auth:
+            auth_flg = check_local_tool_auth_method(self.api_dir_path, action_name)
+              
+            if auth_flg:
+                # If api key is required or optional
+                if not check_local_api_key_exists(self.api_dir_path, action_name):
+                    print(f"You can set up the API key for {action_name} here: {instruction}\n")
+                    api_key = getpass("Paste your API key here:")
+                    if api_key:
+                        with open(os.path.join(self.api_dir_path, '.api_keys', f"{action_name.upper()}_KEY"), 'w+') as f:
+                            f.write(f"{api_key}")
+                        params['api_key'] = api_key
+                    else:
+                        if auth_flg == 2:
+                            print(f"API key is optional for {action_name}. Continue without authentication.")
+                        elif auth_flg == 1:
+                            print("API key is required but missing. May cause failure in the following calling.")
+                else:
+                    # If the api key already exists, load it
+                    if self.observer:
+                        print(f"{action_name} API key already found")
+                    params['api_key'] = get_local_api_key(self.api_dir_path, action_name)
+            
+        func = get_tool_callable(action_name, os.path.join(self.api_dir_path, f"{action_name}.py"))
+        return func(**params)
+                
+                
+    def safe_call(self, action_name: str, input_params: dict):
+        """Call tool functions directly without model, and handle API key by AnyActions.
+        Args:
+            action_name (str): The name of the action to call. Should be the function name and file name in the tool directory.
+            input_params (dict): The input parameters for the function calling
+        """
+        return self.call(action_name, input_params, is_auth = True)
     
     
+
 

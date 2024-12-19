@@ -2,7 +2,22 @@
 
 > Tool usage empowers your LLM agents to interact with external applications via RESTful APIs calls. They are usually either used to do data retrieval (e.g. search a flight schedule) or take action in another application (e.g. file a JIRA ticket).
 
-AnyActions helps you build LLM agents with external tools and manage tool usage authentication easier and faster. 
+AnyActions helps you build LLM agents with external tools (web search, check calendar, etc) and manage tool usage authentication easier and faster. 
+
+```python
+from anyactions import ActionHub
+hub = ActionHub()
+
+# Set up your tool real quick
+tools = hub.tools(["serpapi_google_search"])
+
+# Call LLMs
+response = openai.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": "What is the weather in Tokyo next week?"}],
+    tools=tools,
+)
+```
 
 ### Features
 - Manage tool usage context, authentication, and invocation for LLMs
