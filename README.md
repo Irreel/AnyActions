@@ -1,4 +1,4 @@
-# AnyActions Project
+# AnyActions: Developing Your AI Agents with Seamless Tool Integration
 
 > Tool usage empowers your LLM agents to interact with external applications via RESTful APIs calls. They are usually either used to do data retrieval (e.g. search a flight schedule) or take action in another application (e.g. file a JIRA ticket).
 
