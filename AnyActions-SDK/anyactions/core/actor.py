@@ -11,6 +11,8 @@ from anyactions.common.constants import *
 from anyactions.common.protocol.protocols import ACTION_SUCCESS, ACTION_FAILURE
 from anyactions.common.local import get_local_api_key, check_tool_decorator, get_tool_callable, validate_local_tool
 
+from anyactions.common.constants import TIMEOUT_DURATION
+
 class Actor:
     """
     Actor is a client that processes and executes local tool/function calls based on raw LLM response objects. Should support remote tool/function calls in the future.
@@ -138,7 +140,7 @@ class Actor:
             if self.observer:
                 print("\nNo tool calling object found in the model response\n")
             return response_object
-        
+            
         response = self._act_local(function_name, function_args)
         
         return self._parse_tool_result(response, output_schema=None)
@@ -195,8 +197,16 @@ class Actor:
                 # Get the output schema if it exists in the module
                 # output_schema = getattr(module, 'output_schema', None)
                 
-                # TODO: use MCP
-                response, status = tool_function(**input_params)
+                from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    # TODO: use MCP
+                    future = executor.submit(tool_function, **input_params)
+                    try:
+                        response, status = future.result(timeout=TIMEOUT_DURATION)
+                    except TimeoutError:
+                        raise TimeoutError(f"Tool function '{action_name}' timed out after {TIMEOUT_DURATION} seconds.")
+                
                 if status == ACTION_SUCCESS:
                     self.callback(action_name, tool_function, self.observer)
                     validate_local_tool(self.api_dir_path, action_name, self.observer)
@@ -205,8 +215,15 @@ class Actor:
                     raise Exception(f"Error executing tool {module_path}: {response}")
                 
             else:
-                # TODO: use MCP
-                return tool_function(**input_params)
+                from concurrent.futures import ThreadPoolExecutor, TimeoutError
+
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    # TODO: use MCP
+                    future = executor.submit(tool_function, **input_params)      
+                    try:
+                        return future.result(timeout=TIMEOUT_DURATION)
+                    except TimeoutError:
+                        raise TimeoutError(f"Tool function '{action_name}' timed out after {TIMEOUT_DURATION} seconds.")
             
         except ImportError as e:
             raise ImportError(f"Failed to import tool module {action_name}: {e}")

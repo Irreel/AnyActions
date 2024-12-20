@@ -1,7 +1,8 @@
+TIMEOUT_DURATION = 30
+
 SERVER_BASE_URL = ''
 
 LOCAL_ENV_PATH = '.actions/'
-
 CONFIG_PATH = '.actions/.config'
 
 DOWNLOAD_EP = 'download'
