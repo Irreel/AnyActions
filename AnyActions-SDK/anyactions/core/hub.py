@@ -48,7 +48,7 @@ class ActionHub:
         """
         self.env = env
         self.observer = observer
-        self.resolved_endpoint = {} #TODO: might not be necessary if tool function is generated
+        self.resolved_endpoint = {} # TODO
         
         ## Setup client
         load_dotenv()
@@ -67,7 +67,6 @@ class ActionHub:
         
         ## API Key Initialization
         self.api_dir_path = api_dir_path
-        # self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
         self.auth_dir_path = auth_dir_path
         self.api_config_path = config_path
         
