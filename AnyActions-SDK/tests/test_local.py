@@ -5,7 +5,7 @@ import json
 import shutil
 from pathlib import Path
 from anyactions import action
-from anyactions.common.procedure.local import (
+from anyactions.common.local import (
     get_tool_callable,
     write_local_tool,
     read_local_tool,
@@ -22,13 +22,13 @@ class TestLocal(unittest.TestCase):
         # Create a temporary directory for testing
         self.observer = True
         self.api_dir_path = "./.actions"
-        self.api_key_path = os.path.join(self.api_dir_path, ".api_key")
+        self.auth_dir_path = os.path.join(self.api_dir_path, ".api_key")
         self.tool_name = "test_tool"
         self.tool_path = os.path.join(self.api_dir_path, f"{self.tool_name}.py")
         
         # Create directory if it doesn't exist
         os.makedirs(self.api_dir_path, exist_ok=True)
-        os.makedirs(os.path.dirname(self.api_key_path), exist_ok=True)
+        os.makedirs(self.auth_dir_path, exist_ok=True)
         
         # Sample tool definition and function
         self.tool_definition = {
@@ -76,6 +76,10 @@ def test_tool(q: str, api_key: str):
         # Write the test tool file
         with open(self.tool_path, 'w', encoding='utf-8') as f:
             f.write(self.tool_func)
+            
+        # Write the test api key file
+        with open(os.path.join(self.auth_dir_path, f"{self.tool_name.upper()}_KEY"), 'w', encoding='utf-8') as f:
+            f.write("test_api_key")
 
     @action
     def tool_callable(self, q: str, api_key: str):
@@ -90,12 +94,12 @@ def test_tool(q: str, api_key: str):
     def test_check_local_tool_legit_success(self, mock_exists):
         mock_exists.return_value = True
         
-        with patch('anyactions.common.procedure.local.read_tool_definition') as mock_read_def:
+        with patch('anyactions.common.local.read_tool_definition') as mock_read_def:
             mock_read_def.return_value = {
                 "function": {"name": "test_tool"}
             }
             
-            result = check_local_tool_legit(self.api_dir_path, self.tool_name)
+            result = check_local_tool_legit(self.api_dir_path, self.auth_dir_path, self.tool_name)
             self.assertTrue(result)
 
     @patch('os.path.exists')
@@ -103,7 +107,7 @@ def test_tool(q: str, api_key: str):
         mock_exists.return_value = False
         
         with self.assertRaises(AssertionError):
-            check_local_tool_legit(self.api_dir_path, self.tool_name)
+            check_local_tool_legit(self.api_dir_path, self.auth_dir_path, self.tool_name)
 
     @patch('builtins.open', new_callable=mock_open, read_data='test function content')
     def test_read_local_tool(self, mock_file):

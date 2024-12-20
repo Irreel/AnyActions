@@ -17,8 +17,9 @@ class Actor:
     """
     Actor is a client that processes and executes local tool/function calls based on raw LLM response objects. Should support remote tool/function calls in the future.
     """
-    def __init__(self, api_dir_path: str, client = Client, observer=False):
+    def __init__(self, api_dir_path: str, auth_dir_path: str, client = Client, observer=False):
         self.api_dir_path = api_dir_path
+        self.auth_dir_path = auth_dir_path
         self.client = client
         self.observer = observer
     
@@ -190,7 +191,7 @@ class Actor:
             # Handle api_key parameter if the function requires it
             if 'api_key' in params:
                 if 'api_key' not in input_params:
-                    api_key = get_local_api_key(self.api_dir_path, action_name)
+                    api_key = get_local_api_key(self.auth_dir_path, action_name)
                     input_params['api_key'] = api_key
             
             if check_tool_decorator(tool_function, 'generated_action', self.observer):

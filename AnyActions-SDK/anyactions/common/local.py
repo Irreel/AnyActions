@@ -86,12 +86,12 @@ def write_local_key(api_key_path: str, tool_name: str, key: str) -> bool:
 ######
 # Local directory
 ######    
-def create_local_tools_dir(api_dir_path, observer=False):
+def create_local_tools_dir(api_dir_path, auth_dir_path, config_path, observer=False):
     """Create local directory for storing tools"""
     if not os.path.exists(api_dir_path):
         os.makedirs(api_dir_path)
-        os.makedirs(os.path.join(api_dir_path, '.api_keys'))
-        with open(os.path.join(api_dir_path, '.config'), 'w') as f:
+        os.makedirs(auth_dir_path)
+        with open(config_path, 'w') as f:
             pass
         if observer:
             print(f"Local tools directory created: {api_dir_path}")
@@ -104,7 +104,7 @@ def create_local_tools_dir(api_dir_path, observer=False):
 ######
 # Validation for local tool calling
 ######    
-def check_local_tool_legit(api_dir_path: str, tool_name: str, observer=False):
+def check_local_tool_legit(api_dir_path: str, auth_dir_path: str, tool_name: str, observer=False):
     """Check if local tools directory exists and with api keys"""
     assert check_local_tools_dir_exists(api_dir_path)
     assert check_local_tool_exists(api_dir_path, tool_name)
@@ -128,7 +128,7 @@ def check_local_tool_legit(api_dir_path: str, tool_name: str, observer=False):
     if "api_key" in signature.parameters:
         api_key_param = signature.parameters["api_key"]
         if api_key_param.default == inspect._empty:
-            assert check_local_api_key_exists(api_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key by: ActionHub.set_key()")
+            assert check_local_api_key_exists(auth_dir_path, tool_name, observer), LocalToolException(f"API key is required for {tool_name}. Please add an API key by: ActionHub.set_key()")
     
     # TODO:Check if dependencies are satisfied
     
@@ -145,9 +145,9 @@ def check_local_tool_exists(api_dir_path: str, tool_name: str, observer=False):
     assert os.path.exists(tool_path), LocalToolException(f"Local tool does not exist: {tool_path}. Check if the tool is registered in ActionHub.")
     return True
 
-def check_local_api_key_exists(api_dir_path: str, tool_name: str, observer=False):
+def check_local_api_key_exists(auth_dir_path: str, tool_name: str, observer=False):
     """Check if api key exists"""
-    api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
+    api_key_path = os.path.join(auth_dir_path, f"{tool_name.upper()}_KEY")
     if not os.path.exists(api_key_path):
         return False   
     with open(api_key_path, 'r') as f:
@@ -227,9 +227,9 @@ def get_all_local_tool_names(api_dir_path: str, observer=False) -> List[str]:
         print(f"{len(tool_list)} local tools loaded")
     return tool_list
 
-def get_local_tool_definition(api_dir_path: str, tool_name: str, observer=False):
+def get_local_tool_definition(api_dir_path: str, auth_dir_path: str, tool_name: str, observer=False):
     """Load a single local tool from local directory"""
-    check_local_tool_legit(api_dir_path, tool_name, observer)
+    check_local_tool_legit(api_dir_path, auth_dir_path, tool_name, observer)
     
     tool_definition = read_tool_definition(api_dir_path, tool_name)
     if observer:
@@ -258,9 +258,9 @@ def get_local_tool_function_params(api_dir_path: str, tool_name: str, observer=F
     except Exception as e:
         raise LocalToolException(f"Failed to get function parameters for {tool_name}: {e}")
 
-def get_local_api_key(api_dir_path: str, tool_name: str, observer=False):
+def get_local_api_key(auth_dir_path: str, tool_name: str, observer=False):
     """Get the api key for a local tool"""
-    api_key_path = os.path.join(api_dir_path, '.api_keys', f"{tool_name.upper()}_KEY")
+    api_key_path = os.path.join(auth_dir_path, f"{tool_name.upper()}_KEY")
     assert os.path.exists(api_key_path), LocalToolException(f"API key for {tool_name} not found in {api_key_path}. Please check if the API key file exists.")
     
     with open(api_key_path, 'r') as f:

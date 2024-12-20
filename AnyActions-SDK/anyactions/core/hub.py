@@ -11,22 +11,24 @@ from anyactions.common.local import *
 from anyactions.core import Retriever, Actor
 from anyactions.core.client import Client, RequestStatus
 
-from anyactions.common.constants import LOCAL_ENV_PATH, CONFIG_PATH
+from anyactions.common.constants import LOCAL_ENV_PATH, LOCAL_AUTH_PATH, CONFIG_PATH
 
 class ActionHub:
     """
     This is the main class for managing tools and API calls.
     """
     
-    def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, config_path=CONFIG_PATH, observer=True):
+    def __init__(self, env={}, model_provider="openai", api_dir_path=LOCAL_ENV_PATH, auth_dir_path=LOCAL_AUTH_PATH, config_path=CONFIG_PATH, observer=True):
         """
         Initialize the ActionHub class which manages tool loading, API key handling, and tool execution.
         
         Args:
             env (dict, optional): Environment variables for LLM configuration and user machine settings. 
             model_provider (str, optional): The LLM provider. Only supports "openai" now.
-            api_dir_path (str, optional): Path to the directory storing API configurations and tools.
-            observer (bool, optional): If True, print debug information. Defaults to False.
+            api_dir_path (str, optional): Path to the directory storing tool functions.
+            auth_dir_path (str, optional): Path to the directory storing API keys.
+            config_path (str, optional): Path to the configuration file.
+            observer (bool, optional): If True, print debug information. Defaults to True.
                 
         Directory Structure Created:
             - api_dir_path/
@@ -61,11 +63,12 @@ class ActionHub:
         if os.path.exists(api_dir_path):
             pass
         else:
-            create_local_tools_dir(api_dir_path)
+            create_local_tools_dir(api_dir_path, auth_dir_path)
         
         ## API Key Initialization
         self.api_dir_path = api_dir_path
-        self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
+        # self.api_keys_path = os.path.join(api_dir_path, '.api_keys')
+        self.auth_dir_path = auth_dir_path
         self.api_config_path = config_path
         
         
@@ -89,7 +92,7 @@ class ActionHub:
     def set_key(self, action_name: str, api_key: str):
         """Set up authentication (API key) for a tool by adding an API key to the local environment"""
         try:
-            write_local_key(self.api_keys_path, action_name, api_key)
+            write_local_key(self.auth_dir_path, action_name, api_key)
             print(f"Added authentication for {action_name} successfully")
             return True
         except Exception as e:
@@ -120,9 +123,9 @@ class ActionHub:
             if isinstance(i, str):
                 # Load tools from local
                 if i in local_tool_list:
-                    check_local_tool_legit(self.api_dir_path, i, self.observer)
+                    check_local_tool_legit(self.api_dir_path, self.auth_dir_path, i, self.observer)
                     try:
-                        definition_list.append(get_local_tool_definition(self.api_dir_path, i))
+                        definition_list.append(get_local_tool_definition(self.api_dir_path, self.auth_dir_path, i))
                     except Exception as e:
                         raise Exception(f"{i} Parse tool definition failed. Please check if {self.api_dir_path}{i}.py is valid: {e}")
                 else:
@@ -173,7 +176,7 @@ class ActionHub:
                 # Load tools from local
                 if i in local_tool_list:
                     try:
-                        check_local_tool_legit(self.api_dir_path, i, self.observer)
+                        check_local_tool_legit(self.api_dir_path, self.auth_dir_path, i, self.observer)
                     except AssertionError as e:
                         print(e)
                     try:
@@ -227,7 +230,7 @@ class ActionHub:
             
             if auth_flg:
                 # If api key is required or optional
-                if not check_local_api_key_exists(self.api_dir_path, tool_name):
+                if not check_local_api_key_exists(self.auth_dir_path, tool_name):
                     print(f"You can set up the API key here: {instruction}\n")
                     api_key = getpass("Paste your API key here:")
                     if api_key:
@@ -254,7 +257,7 @@ class ActionHub:
   
     def act(self, response_object):
         """Execute the action based on response object and return the raw response"""
-        response = Actor(self.api_dir_path, self.client, self.observer)(response_object)
+        response = Actor(self.api_dir_path, self.auth_dir_path, self.client, self.observer)(response_object)
         return response
 
         
@@ -271,7 +274,7 @@ class ActionHub:
               
             if auth_flg:
                 # If api key is required or optional
-                if not check_local_api_key_exists(self.api_dir_path, action_name):
+                if not check_local_api_key_exists(self.auth_dir_path, action_name):
                     print(f"You can set up the API key for {action_name} here: {instruction}\n")
                     api_key = getpass("Paste your API key here:")
                     if api_key:
@@ -287,7 +290,7 @@ class ActionHub:
                     # If the api key already exists, load it
                     if self.observer:
                         print(f"{action_name} API key already found")
-                    params['api_key'] = get_local_api_key(self.api_dir_path, action_name)
+                    params['api_key'] = get_local_api_key(self.auth_dir_path, action_name)
             
         func = get_tool_callable(action_name, os.path.join(self.api_dir_path, f"{action_name}.py"))
         return func(**params)
